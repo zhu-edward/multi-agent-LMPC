@@ -52,8 +52,8 @@ class CT_Kin_Bike_Agent(CT_Kin_Bike_Model):
 class DT_Kin_Bike_Agent(DT_Kin_Bike_Model):
     def __init__(self, l_r, l_f, w, dt, x_0, x_f,
         a_lim=[-1.0, 1.0], df_lim=[-0.5, 0.5], x_lim=[-10.0, 10.0],
-        y_lim=[-10.0, 10.0], psi_lim=None, v_lim=[-2.0, 2.0]):
-        super(DT_Kin_Bike_Agent, self).__init__(l_r, l_f)
+        y_lim=[-10.0, 10.0], psi_lim=None, v_lim=[-10.0, 10.0]):
+        super(DT_Kin_Bike_Agent, self).__init__(l_r, l_f, dt)
 
         self.w = w
         self.l = l_r + l_f
@@ -78,38 +78,46 @@ class DT_Kin_Bike_Agent(DT_Kin_Bike_Model):
         b = []
         if self.x_lim is not None:
             F.append(np.array([[1., 0., 0., 0.], [-1., 0., 0., 0.]]))
-            b.append(np.array([[x_lim[1]], [x_lim[0]]]))
+            b.append(np.array([[x_lim[1]], [-x_lim[0]]]))
 
         if self.y_lim is not None:
             F.append(np.array([[0., 1., 0., 0.], [0., -1., 0., 0.]]))
-            b.append(np.array([[y_lim[1]], [y_lim[0]]]))
+            b.append(np.array([[y_lim[1]], [-y_lim[0]]]))
 
         if self.psi_lim is not None:
             F.append(np.array([[0., 0., 1., 0.], [0., 0., -1., 0.]]))
-            b.append(np.array([[psi_lim[1]], [psi_lim[0]]]))
+            b.append(np.array([[psi_lim[1]], [-psi_lim[0]]]))
 
         if self.v_lim is not None:
             F.append(np.array([[0., 0., 0., 1.], [0., 0., 0., -1.]]))
-            b.append(np.array([[v_lim[1]], [v_lim[0]]]))
+            b.append(np.array([[v_lim[1]], [-v_lim[0]]]))
 
-        self.F = np.vstack(F)
-        self.b = np.vstack(b)
+        if len(F) > 0:
+            self.F = np.vstack(F)
+            self.b = np.squeeze(np.vstack(b))
+        else:
+            self.F = None
+            self.b = None
 
         H = []
         g = []
         if self.df_lim is not None:
             H.append(np.array([[1., 0.], [-1., 0.]]))
-            g.append(np.array([[df_lim[1]], [df_lim[0]]]))
+            g.append(np.array([[df_lim[1]], [-df_lim[0]]]))
 
         if self.a_lim is not None:
             H.append(np.array([[0., 1.], [0., -1.]]))
-            g.append(np.array([[a_lim[1]], [a_lim[0]]]))
+            g.append(np.array([[a_lim[1]], [-a_lim[0]]]))
 
-        self.H = np.vstack(H)
-        self.g = np.vstack(g)
+        if len(H) > 0:
+            self.H = np.vstack(H)
+            self.g = np.squeeze(np.vstack(g))
+        else:
+            self.H = None
+            self.b = None
 
-    def get_DT_jacs(self, x, u):
-       A, B, c = self.get_numerical_jacs(x, u)
+    def get_jacobians(self, x, u, eps):
+       A, B, c = self.get_numerical_jacs(x, u, eps)
 
        return A, B, c
 
@@ -125,3 +133,6 @@ class DT_Kin_Bike_Agent(DT_Kin_Bike_Model):
 
     def get_collision_buff_r(self):
         return self.r
+
+    def get_state_input_his(self):
+        return self.state_his, self.input_his
