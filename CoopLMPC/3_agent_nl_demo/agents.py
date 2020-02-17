@@ -50,7 +50,7 @@ class CT_Kin_Bike_Agent(CT_Kin_Bike_Model):
 
 
 class DT_Kin_Bike_Agent(DT_Kin_Bike_Model):
-    def __init__(self, l_r, l_f, w, dt, x_0, x_f,
+    def __init__(self, l_r, l_f, w, dt, x_0,
         a_lim=[-1.0, 1.0], df_lim=[-0.5, 0.5], x_lim=[-10.0, 10.0],
         y_lim=[-10.0, 10.0], psi_lim=None, v_lim=[-10.0, 10.0]):
         super(DT_Kin_Bike_Agent, self).__init__(l_r, l_f, dt)
@@ -60,7 +60,6 @@ class DT_Kin_Bike_Agent(DT_Kin_Bike_Model):
         self.r = np.sqrt((self.w/2.0)**2 + (self.l/2.0)**2)
         self.dt = dt
         self.x_0 = x_0
-        self.x_f = x_f
 
         self.state_his = [x_0]
         self.input_his = []
@@ -117,7 +116,8 @@ class DT_Kin_Bike_Agent(DT_Kin_Bike_Model):
             self.b = None
 
     def get_jacobians(self, x, u, eps):
-       A, B, c = self.get_numerical_jacs(x, u, eps)
+       # A, B, c = self.get_numerical_jacs(x, u, eps)
+       A, B, c = self.get_jacs(x, u)
 
        return A, B, c
 

@@ -78,6 +78,33 @@ class DT_Kin_Bike_Model(object):
 
         return x_dot
 
+    def get_jacs(self, x, u):
+        beta = np.arctan2(self.l_r*np.tan(u[0]), self.l_f + self.l_r)
+        dbeta_ddf = lambda df : self.l_r/(np.cos(u[0])**2*(self.l_f+self.l_r)*(1+(self.l_r*np.tan(u[0])/(self.l_f+self.l_r))**2))
+
+        A_c = np.zeros((self.n_x, self.n_x))
+        B_c = np.zeros((self.n_x, self.n_u))
+        c_c = np.zeros(self.n_x)
+
+        A_c[0,2] = -x[3]*np.sin(x[2]+beta)
+        A_c[0,3] = np.cos(x[2]+beta)
+        A_c[1,2] = x[3]*np.cos(x[2]+beta)
+        A_c[1,3] = np.sin(x[2]+beta)
+        A_c[2,3] = np.sin(beta)/self.l_r
+
+        B_c[0,0] = -x[3]*np.sin(x[2]+beta)*dbeta_ddf(u[0])
+        B_c[1,0] = x[3]*np.cos(x[2]+beta)*dbeta_ddf(u[0])
+        B_c[2,0] = x[3]*np.cos(beta)*dbeta_ddf(u[0])/self.l_r
+        B_c[3,1] = 1
+
+        c_c = self.sim_ct(x, u)
+
+        A_d = self.dt*A_c
+        B_d = self.dt*B_c
+        c_d = self.dt*c_c
+
+        return A_d, B_d, c_d
+
     def get_numerical_jacs(self, x, u, eps):
         A_c = np.zeros((self.n_x, self.n_x))
         B_c = np.zeros((self.n_x, self.n_u))
