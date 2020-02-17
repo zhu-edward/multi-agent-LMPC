@@ -69,7 +69,7 @@ class LTV_FTOCP(object):
 			# Stage cost
 			cost += cp.quad_form(x[:,i]-self.x_refs[self.x_refs_idx], self.Q) + cp.quad_form(u[:,i], self.R)
 			if i < self.N-1:
-				constr += [cp.abs(u[0,i+1]-u[0,i]) <= 0.3*self.agent.dt] # Steering rate
+				constr += [cp.abs(u[0,i+1]-u[0,i]) <= 0.5*self.agent.dt] # Steering rate
 				constr += [cp.abs(u[1,i+1]-u[1,i]) <= 3.0*self.agent.dt] # Throttle rate
 				cost += cp.quad_form(u[:,i+1]-u[:,i], self.Rd) # Control rate penalty
 
