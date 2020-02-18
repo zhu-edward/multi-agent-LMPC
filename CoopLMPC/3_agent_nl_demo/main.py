@@ -69,7 +69,7 @@ def solve_init_traj(ftocp, x_0, model_agent, tol=-7):
 			print('Waypoint %i reached' % waypt_idx)
 			ftocp.advance_reference_idx()
 			waypt_idx = ftocp.get_reference_idx()
-		elif d <= 0.5 and v <= 10**tol and waypt_idx == len(waypts)-1:
+		elif d <= 1.0 and np.abs(v) <= 10**tol and waypt_idx == len(waypts)-1:
 			print('Goal state reached')
 			break
 
@@ -191,9 +191,12 @@ def main():
 
 		# Intermediate waypoint to ensure collision-free trajectory
 		waypts = [[] for _ in range(n_a)]
-		waypts[0] = [np.array([-5.0, 0.0, 3.0*np.pi/2.0, 1.0])]
-		waypts[1] = [np.array([0.0, -5.0, 0.0, 1.0])]
-		waypts[2] = [np.array([5.0, 0.0, np.pi/2, 1.0])]
+		# waypts[0] = [np.array([-5.0, 0.0, 3.0*np.pi/2.0, 1.0])]
+		# waypts[1] = [np.array([0.0, -5.0, 0.0, 1.0])]
+		# waypts[2] = [np.array([5.0, 0.0, np.pi/2, 1.0])]
+		waypts[0] = [np.array([-5.0, 0.0, 3.0*np.pi/2.0, 0.5])]
+		waypts[1] = [np.array([0.0, -5.0, 0.0, 0.5])]
+		waypts[2] = [np.array([5.0, 0.0, np.pi/2, 0.5])]
 		for i in range(n_a):
 			waypts[i].append(x_f[i])
 
@@ -203,11 +206,13 @@ def main():
 
 		# Initialize FTOCP objects
 		# Initial trajectory MPC parameters for each agent
-		Q = np.diag([20.0, 20.0, 15.0, 25.0])
-		R = np.diag([1.0, 10.0])
-		Rd = 0.1*np.eye(2)
+		Q = np.diag([20.0, 20.0, 15.0, 50.0])
+		# R = np.diag([10.0, 30.0])
+		# Rd = np.diag([10.0, 30.0])
+		R = np.diag([100.0, 50.0])
+		Rd = np.diag([100.0, 50.0])
 		P = Q
-		N = 15
+		N = 30
 		ltv_ftocps = [LTV_FTOCP(Q, P, R, Rd, N, control_agents[i], x_refs=waypts[i]) for i in range(n_a)]
 
 		if Q.shape[0] != Q.shape[1] or len(np.diag(Q)) != n_x:
@@ -264,7 +269,7 @@ def main():
 	for i in range(n_a):
 		x_f[i] = xcl_feas[i][:,-1]
 
-	# pdb.set_trace()
+	pdb.set_trace()
 	# ====================================================================================
 
 	# ====================================================================================
@@ -272,18 +277,18 @@ def main():
 	# ====================================================================================
 
 	# Initialize LMPC objects for each agent
-	N_LMPC = [15, 15, 15] # horizon lengths
+	N_LMPC = [20, 20, 20] # horizon lengths
 	lmpc_ftocp = [NL_FTOCP(N_LMPC[i], control_agents[i]) for i in range(n_a)]# ftocp solve by LMPC
 	lmpc = [NL_LMPC(f) for f in lmpc_ftocp]# Initialize the LMPC
 
 	xcls = [copy.copy(xcl_feas)]
 	ucls = [copy.copy(ucl_feas)]
 
-	# ss_n_t = 30
-	ss_n_t = 5
+	ss_n_t = 30
+	# ss_n_t = 5
 	ss_n_j = 5
 
-	totalIterations = 15 # Number of iterations to perform
+	totalIterations = 5 # Number of iterations to perform
 	start_time = time.strftime("%Y-%m-%d_%H-%M-%S")
 	exp_dir = '/'.join((out_dir, start_time))
 	os.makedirs(exp_dir)
@@ -298,10 +303,10 @@ def main():
 	# iteration loop
 	for it in range(totalIterations):
 		print('****************** Iteration %i ******************' % (it+1))
-		# plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, it=it)
+		plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, it=it)
 
 		# Compute safe sets and exploration spaces along previous trajectory
-		ss_idxs, expl_constrs = get_safe_set(xcls, x_f, model_agents, ss_n_t, ss_n_j)
+		ss_idxs, expl_constrs = get_safe_set(xcls, x_f, control_agents, ss_n_t, ss_n_j)
 
 		# inspect_safe_set(xcls, ucls, ss_idxs, expl_constrs, plot_lims)
 		pdb.set_trace()

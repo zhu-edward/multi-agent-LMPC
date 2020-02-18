@@ -138,7 +138,7 @@ class NL_LMPC(object):
 			x_guess = np.append(self.x_preds_best_it[-1][:,1:], ss_kp1.reshape((-1,1)), axis=1)
 			u_guess = self.u_preds_best_it[-1]
 
-		pdb.set_trace()
+		# pdb.set_trace()
 
 		# Solve for each element in safe set
 		for i in range(SS.shape[1]):
@@ -147,7 +147,7 @@ class NL_LMPC(object):
 			term_cost = Qfun[i]
 
 			# We only attempt to solve with safe set points which offer the possibility of cost improvement
-			if self.ftocp_N + term_cost < self.last_cost:
+			if self.ftocp_N + term_cost <= self.last_cost:
 				x_pred, u_pred, cost = self.ftocp.solve(x_t, ts, x_f,
 					x_guess=x_guess,
 					u_guess=u_guess,
@@ -179,7 +179,7 @@ class NL_LMPC(object):
 			u_pred_best = None
 			cost_best = None
 
-		pdb.set_trace()
+			pdb.set_trace()
 
 		return x_pred_best, u_pred_best, cost_best, SS, self.ftocp_N
 

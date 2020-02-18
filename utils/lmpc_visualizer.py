@@ -163,7 +163,7 @@ class lmpc_visualizer(object):
 					a.plot(range(l), self.prev_state_cl[self.agent_id][plot_idx,:], 'b.', markersize=2)
 				a.scatter(range(t+N, t+N+SS.shape[1]), SS[plot_idx,:], marker='o', alpha=0.3, c='k')
 				a.plot(range(t, t+pred_len), state_preds[plot_idx,:], 'g.-', markersize=3)
-				a.plot(range(cl_len), state_cl[plot_idx,:], 'k.', markersize=2)
+				a.plot(range(cl_len-1), state_cl[plot_idx,:-1], 'k.', markersize=2)
 
 		try:
 			self.fig.canvas.draw()
