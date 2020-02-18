@@ -1,7 +1,10 @@
 *.txt
 *.pyc
 *.pkl
+*.npz
 .ipynb_checkpoints
 Notebooks
 plots
 out
+
+CoopLMPC/3_agent_nl_demo/backup_data

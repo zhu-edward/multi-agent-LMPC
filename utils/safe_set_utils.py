@@ -53,7 +53,7 @@ def get_safe_set(x_cls, xf, agents, des_num_ts='all', des_num_iters='all'):
 	# safe_set_idxs = [agent_0_ss_idxs, agent_1_ss_idxs, ... , agent_M_ss_idxs]
 	# agent_#_ss_idxs = [ss_idxs_0, ss_idxs_1, ... , ss_idxs_T]
 	safe_sets_idxs = [[] for _ in range(n_a)]
-	exploration_spaces = [[[], []] for _ in range(n_a)]
+	exploration_spaces = [[] for _ in range(n_a)]
 	last_invalid_t = -1
 
 	for t in range(num_ts):
@@ -73,7 +73,7 @@ def get_safe_set(x_cls, xf, agents, des_num_ts='all', des_num_iters='all'):
 				for j in it_range:
 					i = orig_range.index(j)
 					ts_range.append(range(min(t, cl_lens[i][a]-1), min(ts_end, cl_lens[i][a])))
-					print(range(min(t, cl_lens[i][a]-1), min(ts_end, cl_lens[i][a])), x_cls[j][a].shape)
+					# print(range(min(t, cl_lens[i][a]-1), min(ts_end, cl_lens[i][a])), x_cls[j][a].shape)
 				ss_idxs = {'it_range' : it_range, 'ts_range' : ts_range}
 				safe_set_cand_t.append(ss_idxs) # Candidate safe sets at this time step
 
@@ -106,9 +106,9 @@ def get_safe_set(x_cls, xf, agents, des_num_ts='all', des_num_iters='all'):
 
 				# Check for misclassification of support vectors. This indicates that the safe sets are not linearlly separable
 				for i in clf.support_:
-				    pred_label = clf.predict(X[i].reshape((1,-1)))
+					pred_label = clf.predict(X[i].reshape((1,-1)))
 					# pred_val = clf.decision_function(X[i].reshape((1,-1)))
-				    if pred_label != y[i]:
+					if pred_label != y[i]:
 						collision = True
 						print('Potential for collision between agents %i and %i' % (p[0],p[1]))
 						break
@@ -207,8 +207,9 @@ def get_safe_set(x_cls, xf, agents, des_num_ts='all', des_num_iters='all'):
 
 		for a in range(n_a):
 			safe_sets_idxs[a].append(safe_set_cand_t[a])
-			exploration_spaces[a][0].append(H_t[a])
-			exploration_spaces[a][1].append(g_t[a])
+			# exploration_spaces[a][0].append(H_t[a])
+			# exploration_spaces[a][1].append(g_t[a])
+			exploration_spaces[a].append((H_t[a], g_t[a]))
 
 	# Adjust safe sets from before last_invalid_t to have the same iteration and time range and test that safe sets are contained
 	# in the exploration spaces at each time step
@@ -228,102 +229,102 @@ def get_safe_set(x_cls, xf, agents, des_num_ts='all', des_num_iters='all'):
 			safe_set_pos = np.empty((2,0))
 			for (i, j) in enumerate(safe_sets_idxs[a][t]['it_range']):
 				safe_set_pos = np.append(safe_set_pos, x_cls[j][a][:2,safe_sets_idxs[a][t]['ts_range'][i]], axis=1)
-			in_exp_space = (exploration_spaces[a][0][t].dot(safe_set_pos) + exploration_spaces[a][1][t].reshape((-1,1)) <= 0)
+			in_exp_space = (exploration_spaces[a][t][0].dot(safe_set_pos) + exploration_spaces[a][t][1].reshape((-1,1)) <= 0)
 			if not np.all(in_exp_space):
 				raise(ValueError('Safe set not contained in exploration space at time %i' % t))
 
-	pdb.set_trace()
+	# pdb.set_trace()
 	return safe_sets_idxs, exploration_spaces
 
 def inspect_safe_set(x, u, safe_sets_idxs, exploration_spaces, plot_lims=None):
-    n_a = len(x[-1])
-    n_SS = len(safe_sets_idxs[0])
+	n_a = len(x[-1])
+	n_SS = len(safe_sets_idxs[0])
 
-    c = [matplotlib.cm.get_cmap('jet')(i*(1./(n_a-1))) for i in range(n_a)]
+	c = [matplotlib.cm.get_cmap('jet')(i*(1./(n_a-1))) for i in range(n_a)]
 
-    plt.ion()
+	plt.ion()
 
-    fig = plt.figure()
-    xy_ax = fig.add_axes([0, 0, 1, 1])
-    # psi_ax = fig.add_axes([1.1, 0.9, 1, 0.2])
-    # psi_ax.set_xticks([])
-    # v_ax = fig.add_axes([1.1, 0.6, 1, 0.2])
-    # v_ax.set_xticks([])
-    # df_ax = fig.add_axes([1.1, 0.3, 1, 0.2])
-    # df_ax.set_xticks([])
-    # a_ax = fig.add_axes([1.1, 0.0, 1, 0.2])
+	fig = plt.figure()
+	xy_ax = fig.add_axes([0, 0, 1, 1])
+	# psi_ax = fig.add_axes([1.1, 0.9, 1, 0.2])
+	# psi_ax.set_xticks([])
+	# v_ax = fig.add_axes([1.1, 0.6, 1, 0.2])
+	# v_ax.set_xticks([])
+	# df_ax = fig.add_axes([1.1, 0.3, 1, 0.2])
+	# df_ax.set_xticks([])
+	# a_ax = fig.add_axes([1.1, 0.0, 1, 0.2])
 
-    xy_ax.set_xlabel('x')
-    xy_ax.set_ylabel('y')
-    if plot_lims is not None:
-        xy_ax.set_xlim(plot_lims[0])
-        xy_ax.set_ylim(plot_lims[1])
-    xy_ax.set_aspect('equal')
+	xy_ax.set_xlabel('x')
+	xy_ax.set_ylabel('y')
+	if plot_lims is not None:
+		xy_ax.set_xlim(plot_lims[0])
+		xy_ax.set_ylim(plot_lims[1])
+	xy_ax.set_aspect('equal')
 
-    t = 0
-    new_plot = False
+	t = 0
+	new_plot = False
 
-    print('step = %i' % t)
-    while True:
-        input = raw_input('(debug) ')
-        # Quit inspector
-        if input == 'q':
-            break
-        # Move forward 1 time step
-        elif input == 'f':
-            if t == n_SS-1:
-                print('End reached')
-                continue
-            else:
-                t += 1
-                new_plot = True
-                print('t = %i' % t)
-        # Move backward 1 time step
-        elif input == 'b':
-            if t == 0:
-                print('Start reached')
-                continue
-            else:
-                t -= 1
-                new_plot = True
-                print('t = %i' % t)
-        else:
-            print('Input not recognized')
-            print('Press q to exit, f/b to move forward/backwards through iteration time steps')
+	print('step = %i' % t)
+	while True:
+		input = raw_input('(debug) ')
+		# Quit inspector
+		if input == 'q':
+			break
+		# Move forward 1 time step
+		elif input == 'f':
+			if t == n_SS-1:
+				print('End reached')
+				continue
+			else:
+				t += 1
+				new_plot = True
+				print('t = %i' % t)
+		# Move backward 1 time step
+		elif input == 'b':
+			if t == 0:
+				print('Start reached')
+				continue
+			else:
+				t -= 1
+				new_plot = True
+				print('t = %i' % t)
+		else:
+			print('Input not recognized')
+			print('Press q to exit, f/b to move forward/backwards through iteration time steps')
 
-        if new_plot:
-            xy_ax.clear()
+		if new_plot:
+			xy_ax.clear()
 
-            for a in range(n_a):
-                ss_x = []
-                ss_u = []
-                ss_it_idxs = safe_sets_idxs[a][t]['it_range']
-                ss_ts_idxs = safe_sets_idxs[a][t]['ts_range']
-                print(ss_it_idxs, ss_ts_idxs)
-                for i in ss_it_idxs:
-                    for j in ss_ts_idxs:
-                        ss_x.append(x[i][a][:,j])
-                        ss_u.append(u[i][a][:,j])
-                ss_x = np.array(ss_x)
-                ss_u = np.array(ss_u)
+			for a in range(n_a):
+				ss_x = []
+				ss_u = []
+				ss_it_idxs = safe_sets_idxs[a][t]['it_range']
+				ss_ts_idxs = safe_sets_idxs[a][t]['ts_range']
+				print(ss_it_idxs, ss_ts_idxs)
+				for i in ss_it_idxs:
+					for j in ss_ts_idxs:
+						ss_x.append(x[i][a][:,j])
+						ss_u.append(u[i][a][:,j])
+				ss_x = np.array(ss_x)
+				ss_u = np.array(ss_u)
 
-                H_t = exploration_spaces[a][0][t]
-                g_t = exploration_spaces[a][1][t]
+				H_t = exploration_spaces[a][t][0]
+				g_t = exploration_spaces[a][t][1]
 
-                xy_ax.plot(ss_x[:,0], ss_x[:,1], '.', c=c[a])
+				xy_ax.plot(ss_x[:,0], ss_x[:,1], '.', c=c[a])
 
-                y_0 = (-H_t[0,0]*np.array(plot_lims[0])-g_t[0])/H_t[0,1]
-                y_1 = (-H_t[1,0]*np.array(plot_lims[0])-g_t[1])/H_t[1,1]
-                xy_ax.plot(plot_lims[0], y_0, c=c[a])
-                xy_ax.plot(plot_lims[0], y_1, c=c[a])
+				y_0 = (-H_t[0,0]*np.array(plot_lims[0])-g_t[0])/H_t[0,1]
+				y_1 = (-H_t[1,0]*np.array(plot_lims[0])-g_t[1])/H_t[1,1]
+				xy_ax.plot(plot_lims[0], y_0, c=c[a])
+				xy_ax.plot(plot_lims[0], y_1, c=c[a])
 
-                xy_ax.set_xlabel('x')
-                xy_ax.set_ylabel('y')
-                if plot_lims is not None:
-                    xy_ax.set_xlim(plot_lims[0])
-                    xy_ax.set_ylim(plot_lims[1])
-                xy_ax.set_aspect('equal')
+				xy_ax.set_xlabel('x')
+				xy_ax.set_ylabel('y')
+				if plot_lims is not None:
+					xy_ax.set_xlim(plot_lims[0])
+					xy_ax.set_ylim(plot_lims[1])
+				xy_ax.set_aspect('equal')
 
-            fig.canvas.draw()
+			fig.canvas.draw()
 
-            new_plot = False
+			new_plot = False

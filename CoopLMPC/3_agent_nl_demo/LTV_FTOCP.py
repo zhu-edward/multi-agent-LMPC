@@ -17,6 +17,7 @@ class LTV_FTOCP(object):
 
 		self.agent = agent
 		self.obstacles = obstacles
+		self.dt = agent.dt
 
 		self.n_x = self.agent.n_x
 		self.n_u = self.agent.n_u
@@ -46,8 +47,8 @@ class LTV_FTOCP(object):
 
 		# Initial condition
 		constr = [x[:,0] == np.squeeze(x_0)]
-		constr += [cp.abs(u[0,0]-self.u_preds[0,0,-1]) <= 0.5*self.agent.dt] # Steering rate
-		constr += [cp.abs(u[1,0]-self.u_preds[1,0,-1]) <= 3.0*self.agent.dt] # Throttle rate
+		constr += [cp.abs(u[0,0]-self.u_preds[0,0,-1]) <= 0.5*self.dt] # Steering rate
+		constr += [cp.abs(u[1,0]-self.u_preds[1,0,-1]) <= 3.0*self.dt] # Throttle rate
 
 		cost = 0
 
@@ -69,8 +70,8 @@ class LTV_FTOCP(object):
 			# Stage cost
 			cost += cp.quad_form(x[:,i]-self.x_refs[self.x_refs_idx], self.Q) + cp.quad_form(u[:,i], self.R)
 			if i < self.N-1:
-				constr += [cp.abs(u[0,i+1]-u[0,i]) <= 0.5*self.agent.dt] # Steering rate
-				constr += [cp.abs(u[1,i+1]-u[1,i]) <= 3.0*self.agent.dt] # Throttle rate
+				constr += [cp.abs(u[0,i+1]-u[0,i]) <= 0.5*self.dt] # Steering rate
+				constr += [cp.abs(u[1,i+1]-u[1,i]) <= 3.0*self.dt] # Throttle rate
 				cost += cp.quad_form(u[:,i+1]-u[:,i], self.Rd) # Control rate penalty
 
 		# Terminal state constraints
@@ -81,7 +82,7 @@ class LTV_FTOCP(object):
 
 		# Solve the Finite Time Optimal Control Problem
 		problem = cp.Problem(cp.Minimize(cost), constr)
-		problem.solve(verbose=verbose)
+		problem.solve(solver=cp.MOSEK, verbose=verbose)
 
 		if problem.status != cp.OPTIMAL:
 			if problem.status == cp.INFEASIBLE:
