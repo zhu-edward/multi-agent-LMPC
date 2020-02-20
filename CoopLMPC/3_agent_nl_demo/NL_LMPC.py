@@ -2,7 +2,7 @@ from __future__ import division
 
 import numpy as np
 from numpy import linalg as la
-import pdb, copy
+import pdb, copy, sys
 
 import utils.utils
 
@@ -14,10 +14,10 @@ class NL_LMPC(object):
 		- addTrajectory: adds a trajectory to the safe set SS and update value function
 		- computeCost: computes the cost associated with a feasible trajectory
 		- solve: uses ftocp and the stored data to comptute the predicted trajectory"""
-	def __init__(self, ftocp):
+	def __init__(self, ftocp, N):
 		# Initialization
 		self.ftocp = ftocp
-		self.N = self.ftocp.N
+		self.N = N
 		self.ftocp_N = self.N
 
 		self.Qfun  = []
@@ -52,10 +52,7 @@ class NL_LMPC(object):
 	"""
 	Add state trajectory and input sequence to the set of candidate points for safe set creation
 	"""
-	def addTrajectory(self, x, u, x_f=None):
-		if x_f is None:
-			x_f = np.zeros(self.n_x)
-
+	def addTrajectory(self, x, u, x_f):
 		print(x.shape)
 
 		# Add the feasible trajectory x and the associated input sequence u to the safe set
@@ -70,7 +67,6 @@ class NL_LMPC(object):
 
 		# Reset horizon length
 		self.ftocp_N = self.N
-		self.ftocp.update_horizon_length(self.ftocp_N)
 
 		# Save best predictions and safe set indicies
 		if self.it > 0:
@@ -98,18 +94,19 @@ class NL_LMPC(object):
 			if t == l-1: # Terminal cost
 				cost = [0]
 			else:
-				if la.norm(x[:,t] - x_f, 2) <= 1e-5:
-					cost.append(0)
-				else:
-					cost.append(1 + cost[-1])
+				cost.append(1 + cost[-1])
+				# if la.norm(x[:,t] - x_f, 2) <= 1e-5:
+				# 	cost.append(0)
+				# else:
+				# 	cost.append(1 + cost[-1])
 		# Finally flip the cost to have correct order
 		return np.flip(cost).tolist()
 
-	def solve(self, x_t, ts, x_f, verbose=True):
+	def solve(self, ts, x_t, x_f, tol, verbose=True):
 		# Get the safe set, cost-to-go, and indicies at this time step
-		SS = self.SS_t[ts+self.ftocp_N]
-		Qfun = self.Qfun_t[ts+self.ftocp_N]
-		idxs = self.idxs_t[ts+self.ftocp_N]
+		SS = self.SS_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
+		Qfun = self.Qfun_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
+		idxs = self.idxs_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
 		if self.expl_constrs is not None:
 			expl_con = self.expl_constrs[ts:ts+self.ftocp_N]
 		else:
@@ -119,6 +116,7 @@ class NL_LMPC(object):
 		x_pred_cands = []
 		u_pred_cands = []
 		idx_cands = []
+		x_ss_cands = []
 
 		# Form candidate solution
 		if len(self.x_preds_best_it) == 0:
@@ -130,36 +128,64 @@ class NL_LMPC(object):
 				# On new iteration, use predictions from first time step of last iteration
 				x_guess = self.x_preds_best[-1][0]
 				u_guess = self.u_preds_best[-1][0]
+			last_u = np.zeros(self.n_u)
 		else:
-			# Get the safe set point chosen at the last time step,
-			# find its successor state and append to the prediction at the last time step
-			it_idx, ts_idx = self.idxs_best_it[-1]
-			ss_kp1 = self.x_cls[it_idx][:,min(ts_idx+1, self.traj_lens[-1]-1)]
-			x_guess = np.append(self.x_preds_best_it[-1][:,1:], ss_kp1.reshape((-1,1)), axis=1)
-			u_guess = self.u_preds_best_it[-1]
+			if self.ftocp_N == self.N:
+				# Get the safe set point chosen at the last time step,
+				# find its successor state and input and append to the prediction at the last time step
+				it_idx, ts_idx = self.idxs_best_it[-1]
+				ss_kp1 = self.x_cls[it_idx][:,min(ts_idx+1, self.traj_lens[it_idx]-1)]
+				uss_k = self.u_cls[it_idx][:,min(ts_idx, self.traj_lens[it_idx]-1)]
+				x_guess = np.append(self.x_preds_best_it[-1][:,1:], ss_kp1.reshape((-1,1)), axis=1)
+				u_guess = np.append(self.u_preds_best_it[-1][:,1:], uss_k.reshape((-1,1)), axis=1)
+			else:
+				# We should be able to reach the goal state now so the prediction horizon is shrinking
+				# We shrink the candidate solution by one step
+				x_guess = self.x_preds_best_it[-1][:,1:]
+				u_guess = self.u_preds_best_it[-1][:,1:]
+			last_u = self.u_preds_best_it[-1][:,0]
 
 		# pdb.set_trace()
 
 		# Solve for each element in safe set
 		for i in range(SS.shape[1]):
 			# pdb.set_trace()
-			x_f = SS[:,i]
+			x_ss = SS[:,i]
 			term_cost = Qfun[i]
+			idx = idxs[i]
 
 			# We only attempt to solve with safe set points which offer the possibility of cost improvement
-			if self.ftocp_N + term_cost <= self.last_cost:
-				x_pred, u_pred, cost = self.ftocp.solve(x_t, ts, x_f,
-					x_guess=x_guess,
-					u_guess=u_guess,
-					expl_constraints=expl_con,
-					verbose=verbose)
-				if cost is not None:
-					x_pred_cands.append(x_pred)
-					u_pred_cands.append(u_pred)
-					cost_cands.append(cost + term_cost)
-					idx_cands.append(idxs[i])
+			if self.ftocp_N > 1:
+				if self.ftocp_N + term_cost <= self.last_cost:
+				# if True:
+					x_pred, u_pred, cost = self.ftocp.solve_opti(ts, x_t, x_ss, self.ftocp_N, last_u,
+						x_guess=x_guess,
+						u_guess=u_guess,
+						expl_constraints=expl_con,
+						verbose=verbose)
+					# x_pred, u_pred, cost = self.ftocp.solve(ts, x_t, x_ss, self.ftocp_N, last_u,
+					# 	x_guess=x_guess,
+					# 	u_guess=u_guess,
+					# 	expl_constraints=expl_con,
+					# 	verbose=verbose)
+					if cost is not None:
+						x_pred_cands.append(x_pred)
+						u_pred_cands.append(u_pred)
+						cost_cands.append(cost + term_cost)
+						idx_cands.append(idx)
+						x_ss_cands.append(x_ss)
+				else:
+					print('No performance improvement possible, skipping...')
 			else:
-				print('No performance improvement possible, skipping...')
+				u_t = self.u_preds_best_it[-1][:,1]
+				x_tp1 = self.ftocp.agent.sim(x_t, u_t)
+				# Check for feasibility and store the solution
+				if la.norm(x_tp1 - x_f) <= 10**tol:
+					cost_cands.append(1 + term_cost)
+					x_pred_cands.append(np.hstack((x_t.reshape((-1,1)), x_f.reshape((-1,1)))))
+					u_pred_cands.append(u_t.reshape((-1,1)))
+					idx_cands.append(None)
+					x_ss_cands.append(None)
 
 		if len(cost_cands) > 0:
 			min_idx = np.argmin(cost_cands)
@@ -167,19 +193,28 @@ class NL_LMPC(object):
 			u_pred_best = u_pred_cands[min_idx]
 			cost_best = cost_cands[min_idx]
 			idx_best = idx_cands[min_idx]
+			x_ss_best = x_ss_cands[min_idx]
 
 			self.x_preds_best_it.append(x_pred_best)
 			self.u_preds_best_it.append(u_pred_best)
 			self.idxs_best_it.append(idx_best)
-
-			self.ftocp.update_predictions(x_pred_best, u_pred_best)
 		else:
 			print('None of the safe set points are feasible terminal conditions')
 			x_pred_best = None
 			u_pred_best = None
-			cost_best = None
-
+			cost_best = np.inf
 			pdb.set_trace()
+
+		if x_pred_best is not None and self.ftocp_N > 1:
+			if la.norm(x_pred_best[:,-1] - x_f) <= 10**tol:
+				print('Reaching goal state at end of horizon, decreasing horizon from %i to %i' % (self.ftocp_N, self.ftocp_N-1))
+				self.ftocp_N -= 1
+
+		if cost_best > self.last_cost:
+			print('ERROR: The cost is not decreasing')
+			# pdb.set_trace()
+
+		self.last_cost = cost_best
 
 		return x_pred_best, u_pred_best, cost_best, SS, self.ftocp_N
 

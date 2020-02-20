@@ -97,7 +97,7 @@ def solve_lmpc(lmpc, x_0, x_f, model_agent, verbose=False, visualizer=None, paus
 	# time Loop (Perform the task until close to the origin)
 	while True:
 		x_t = xcl[:,t] # Read measurements
-		x_pred, u_pred, cost, SS, N = lmpc.solve(x_t, t, x_f, verbose=verbose) # Solve FTOCP
+		x_pred, u_pred, cost, SS, N = lmpc.solve(t, x_t, x_f, tol, verbose=verbose) # Solve FTOCP
 		# Inspect incomplete trajectory
 		if x_pred is None or u_pred is None and visualizer is not None:
 			# visualizer.traj_inspector(xcl, ucl, x_pred_log, u_pred_log, t, lmpc.SS_t, lmpc.expl_constrs)
@@ -113,11 +113,13 @@ def solve_lmpc(lmpc, x_0, x_f, model_agent, verbose=False, visualizer=None, paus
 		ucl = np.append(ucl, u_t.reshape((-1,1)), axis=1)
 		xcl = np.append(xcl, x_tp1.reshape((-1,1)), axis=1)
 
+		print('ts: %g, d: %g, x: %g, y: %g, phi: %g, v: %g' % (t, la.norm(x_tp1-x_f, ord=2), x_t[0], x_t[1], x_t[2]*180.0/np.pi, x_t[3]))
+
 		if visualizer is not None:
 			visualizer.plot_traj(xcl, ucl, x_pred, u_pred, t, SS, N, lmpc.expl_constrs, shade=True)
 
-		# print('Time step: %i, Distance: %g' % (t, la.norm(xtp1-x_f.reshape((n_x,1)), ord=2)))
 		if la.norm(x_tp1-x_f, ord=2) <= 10**tol:
+			print('Tolerance reached, agent reached goal state')
 			break
 
 		if pause:
@@ -173,7 +175,8 @@ def main():
 
 	# Initialize dynamics and control agents (allows for dynamics to be simulated with higher resolution than control rate)
 	model_agents = [DT_Kin_Bike_Agent(l_r, l_f, w, model_dt, x_0[i]) for i in range(n_a)]
-	control_agents = [DT_Kin_Bike_Agent(l_r, l_f, w, control_dt, x_0[i]) for i in range(n_a)]
+	mpc_control_agents = [DT_Kin_Bike_Agent(l_r, l_f, w, control_dt, x_0[i], a_lim=[-1.0, 1.0], df_lim=[-0.5, 0.5], da_lim=[-1.5, 1.5], ddf_lim=[-0.3, 0.3]) for i in range(n_a)]
+	lmpc_control_agents = [DT_Kin_Bike_Agent(l_r, l_f, w, control_dt, x_0[i]) for i in range(n_a)]
 
 	if not args.init_traj:
 		# ====================================================================================
@@ -206,14 +209,14 @@ def main():
 
 		# Initialize FTOCP objects
 		# Initial trajectory MPC parameters for each agent
-		Q = np.diag([20.0, 20.0, 15.0, 50.0])
-		# R = np.diag([10.0, 30.0])
-		# Rd = np.diag([10.0, 30.0])
-		R = np.diag([100.0, 50.0])
-		Rd = np.diag([100.0, 50.0])
+		Q = np.diag([20.0, 20.0, 15.0, 25.0])
+		R = np.diag([10.0, 30.0])
+		Rd = np.diag([10.0, 30.0])
+		# R = np.diag([100.0, 50.0])
+		# Rd = np.diag([100.0, 50.0])
 		P = Q
-		N = 30
-		ltv_ftocps = [LTV_FTOCP(Q, P, R, Rd, N, control_agents[i], x_refs=waypts[i]) for i in range(n_a)]
+		N = 15
+		ltv_ftocps = [LTV_FTOCP(Q, P, R, Rd, N, mpc_control_agents[i], x_refs=waypts[i]) for i in range(n_a)]
 
 		if Q.shape[0] != Q.shape[1] or len(np.diag(Q)) != n_x:
 			raise(ValueError('Q matrix not shaped properly'))
@@ -243,8 +246,8 @@ def main():
 		for i in range(n_a):
 			x_last = xcl_feas[i][:,-1]
 			x_last[3] = 0.0
-			xcl_feas[i] = np.append(xcl_feas[i], x_last.reshape((n_x,1)), axis=1)
-			ucl_feas[i] = np.append(ucl_feas[i], np.zeros((n_u,2)), axis=1)
+			# xcl_feas[i] = np.append(xcl_feas[i], x_last.reshape((n_x,1)), axis=1)
+			ucl_feas[i] = np.append(ucl_feas[i], np.zeros((n_u,1)), axis=1)
 
 			# Save initial trajecotry if file doesn't exist
 			if not os.path.exists('/'.join((FILE_DIR, 'init_traj_%i.npz' % i))):
@@ -269,7 +272,7 @@ def main():
 	for i in range(n_a):
 		x_f[i] = xcl_feas[i][:,-1]
 
-	pdb.set_trace()
+	# pdb.set_trace()
 	# ====================================================================================
 
 	# ====================================================================================
@@ -278,8 +281,9 @@ def main():
 
 	# Initialize LMPC objects for each agent
 	N_LMPC = [20, 20, 20] # horizon lengths
-	lmpc_ftocp = [NL_FTOCP(N_LMPC[i], control_agents[i]) for i in range(n_a)]# ftocp solve by LMPC
-	lmpc = [NL_LMPC(f) for f in lmpc_ftocp]# Initialize the LMPC
+	# N_LMPC = [15, 15, 15] # horizon lengths
+	lmpc_ftocp = [NL_FTOCP(lmpc_control_agents[i]) for i in range(n_a)]# ftocp solve by LMPC
+	lmpc = [NL_LMPC(f, N_LMPC[i]) for f in lmpc_ftocp]# Initialize the LMPC
 
 	xcls = [copy.copy(xcl_feas)]
 	ucls = [copy.copy(ucl_feas)]
@@ -294,8 +298,8 @@ def main():
 	os.makedirs(exp_dir)
 
 	# Initialize visualizer for each agent
-	lmpc_vis = [lmpc_visualizer(pos_dims=[0,1], n_state_dims=n_x, n_act_dims=n_u, agent_id=i, plot_lims=plot_lims) for i in range(n_a)]
-	# lmpc_vis = [None for i in range(n_a)]
+	# lmpc_vis = [lmpc_visualizer(pos_dims=[0,1], n_state_dims=n_x, n_act_dims=n_u, agent_id=i, plot_lims=plot_lims) for i in range(n_a)]
+	lmpc_vis = [None for i in range(n_a)]
 
 	raw_input('Ready to run LMPC, press enter to continue...')
 
@@ -305,17 +309,21 @@ def main():
 		print('****************** Iteration %i ******************' % (it+1))
 		plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, it=it)
 
+		pdb.set_trace()
+
 		# Compute safe sets and exploration spaces along previous trajectory
-		ss_idxs, expl_constrs = get_safe_set(xcls, x_f, control_agents, ss_n_t, ss_n_j)
+		ss_idxs, expl_constrs = get_safe_set(xcls, x_f, lmpc_control_agents, ss_n_t, ss_n_j)
 
 		# inspect_safe_set(xcls, ucls, ss_idxs, expl_constrs, plot_lims)
-		pdb.set_trace()
+		# pdb.set_trace()
 
 		for i in range(n_a):
 			print('Adding trajectories and updating safe sets for agent %i' % (i+1))
 			lmpc[i].addTrajectory(xcls[-1][i], ucls[-1][i], x_f[i]) # Add feasible trajectory to the safe set
 			lmpc[i].update_safe_sets(ss_idxs[i])
 			lmpc[i].update_exploration_constraints(expl_constrs[i])
+
+		# pdb.set_trace()
 
 		for lv in lmpc_vis:
 			if lv is not None:
@@ -354,7 +362,7 @@ def main():
 		pickle.dump(lmpc, open('/'.join((exp_dir, 'it_%i.pkl' % (it+1))), 'wb'))
 
 	# Plot last trajectory
-	utils.plot_utils.plot_agent_trajs(xcls[-1], r_a=r_a, trail=True, plot_lims=plot_lims, save_dir=exp_dir, it=totalIterations)
+	plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, it=it)
 	#=====================================================================================
 
 	plt.show()

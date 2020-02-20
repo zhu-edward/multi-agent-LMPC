@@ -45,10 +45,13 @@ class LTV_FTOCP(object):
 		if len(self.obstacles) > 0:
 			M = 1000
 
+		da_lim = self.agent.da_lim[1]
+		ddf_lim = self.agent.ddf_lim[1]
+
 		# Initial condition
 		constr = [x[:,0] == np.squeeze(x_0)]
-		constr += [cp.abs(u[0,0]-self.u_preds[0,0,-1]) <= 0.5*self.dt] # Steering rate
-		constr += [cp.abs(u[1,0]-self.u_preds[1,0,-1]) <= 3.0*self.dt] # Throttle rate
+		constr += [cp.abs(u[0,0]-self.u_preds[0,0,-1]) <= ddf_lim*self.dt] # Steering rate
+		constr += [cp.abs(u[1,0]-self.u_preds[1,0,-1]) <= da_lim*self.dt] # Throttle rate
 
 		cost = 0
 
@@ -70,8 +73,8 @@ class LTV_FTOCP(object):
 			# Stage cost
 			cost += cp.quad_form(x[:,i]-self.x_refs[self.x_refs_idx], self.Q) + cp.quad_form(u[:,i], self.R)
 			if i < self.N-1:
-				constr += [cp.abs(u[0,i+1]-u[0,i]) <= 0.5*self.dt] # Steering rate
-				constr += [cp.abs(u[1,i+1]-u[1,i]) <= 3.0*self.dt] # Throttle rate
+				constr += [cp.abs(u[0,i+1]-u[0,i]) <= ddf_lim*self.dt] # Steering rate
+				constr += [cp.abs(u[1,i+1]-u[1,i]) <= da_lim*self.dt] # Throttle rate
 				cost += cp.quad_form(u[:,i+1]-u[:,i], self.Rd) # Control rate penalty
 
 		# Terminal state constraints

@@ -51,8 +51,9 @@ class CT_Kin_Bike_Agent(CT_Kin_Bike_Model):
 
 class DT_Kin_Bike_Agent(DT_Kin_Bike_Model):
     def __init__(self, l_r, l_f, w, dt, x_0,
-        a_lim=[-1.0, 1.0], df_lim=[-0.5, 0.5], x_lim=[-10.0, 10.0],
-        y_lim=[-10.0, 10.0], psi_lim=None, v_lim=[-10.0, 10.0]):
+        a_lim=[-3.0, 3.0], df_lim=[-0.5, 0.5], x_lim=[-10.0, 10.0],
+        y_lim=[-10.0, 10.0], psi_lim=None, v_lim=[-10.0, 10.0],
+        da_lim=[-7.0, 7.0], ddf_lim=[-0.7, 0.7]):
         super(DT_Kin_Bike_Agent, self).__init__(l_r, l_f, dt)
 
         self.w = w
@@ -65,12 +66,15 @@ class DT_Kin_Bike_Agent(DT_Kin_Bike_Model):
         self.input_his = []
 
         self.a_lim = a_lim
-    	self.df_lim = df_lim
+        self.df_lim = df_lim
 
         self.x_lim = x_lim
         self.y_lim = y_lim
         self.psi_lim = psi_lim
         self.v_lim = v_lim
+
+        self.da_lim = da_lim
+        self.ddf_lim = ddf_lim
 
         # Build the matrices for the input constraint
         F = []
