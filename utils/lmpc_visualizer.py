@@ -10,7 +10,7 @@ import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 
 class lmpc_visualizer(object):
-	def __init__(self, pos_dims, n_state_dims, n_act_dims, agent_id, plot_lims=None, plot_dir=None):
+	def __init__(self, pos_dims, n_state_dims, n_act_dims, agent_id, n_agents, plot_lims=None, plot_dir=None):
 		if len(pos_dims) > 2:
 			raise(ValueError('Can only plot 2 position dimensions'))
 		self.agent_id = agent_id
@@ -20,15 +20,44 @@ class lmpc_visualizer(object):
 		self.plot_dir = plot_dir
 		self.plot_lims = plot_lims
 
+		self.n_a = n_agents
+		self.c = [matplotlib.cm.get_cmap('jet')(i*(1./(self.n_a-1))) for i in range(self.n_a)]
+
 		self.ax_labels = ['$a$', '$df$', '$v$', '$\phi$']
+
+		x_data = []
+		y_data = []
 
 		plt.ion()
 		f_w = 12
 		f_h = 7
 		self.fig = plt.figure(figsize=(f_w,f_h))
+		# self.fig.subplots_adjust(bottom=0.3)
 
 		# Initialize position plot
-		self.pos_ax = self.fig.add_axes([0.02, 0, 0.48, 1.0])
+		self.pos_ax = self.fig.add_axes([0.03, 0.03, 0.48, 0.95])
+
+		self.prev_trajs_xy = []
+		self.prev_pos = []
+		for i in range(self.n_a):
+			t, = self.pos_ax.plot(x_data, y_data, '.', markersize=1, c=self.c[i])
+			p, = self.pos_ax.plot(x_data, y_data, 'o', c=self.c[i])
+			self.prev_trajs_xy.append(t)
+			self.prev_pos.append(p)
+
+		self.pred_xy = []
+		for i in range(50):
+			pr, = self.pos_ax.plot(x_data, y_data, 'o', markersize=2)
+			self.pred_xy.append(pr)
+
+		self.expl_bound_xy = []
+		for i in range(50):
+			ex, = self.pos_ax.plot(x_data, y_data, linewidth=0.7)
+			self.expl_bound_xy.append(ex)
+
+		self.traj_line, = self.pos_ax.plot(x_data, y_data, 'k.')
+		self.ss_line, = self.pos_ax.plot(x_data, y_data, 'ko', fillstyle='none', markersize=5)
+
 		if self.plot_lims is not None:
 			self.pos_ax.set_xlim(self.plot_lims[0])
 			self.pos_ax.set_ylim(self.plot_lims[1])
@@ -36,9 +65,21 @@ class lmpc_visualizer(object):
 		self.pos_ax.set_ylabel('$y$')
 
 		# Initialize timeseries plot
-		self.ts_axs = [self.fig.add_axes([0.55, 0.02+i*1.0/(n_state_dims+n_act_dims-2), 0.4, 1.0/(n_state_dims+n_act_dims-2)-0.05]) for i in range(n_act_dims+n_state_dims-2)]
+		self.ts_axs = [self.fig.add_axes([0.58, 0.03+i*1.0/(n_state_dims+n_act_dims-2), 0.4, 1.0/(n_state_dims+n_act_dims-2)-0.05]) for i in range(n_act_dims+n_state_dims-2)]
+		self.prev_traj_ts = []
+		self.curr_traj_ts = []
+		self.ss_ts = []
+		self.pred_ts = []
 		for (i, a) in enumerate(self.ts_axs):
 			a.set_ylabel(self.ax_labels[i])
+			pt, = a.plot(x_data, y_data, 'b.-', markersize=2)
+			ct, = a.plot(x_data, y_data, 'k.-', markersize=2)
+			pr, = a.plot(x_data, y_data, 'g.-', markersize=2)
+			ss, = a.plot(x_data, y_data, 'ko', fillstyle='none', markersize=5)
+			self.prev_traj_ts.append(pt)
+			self.curr_traj_ts.append(ct)
+			self.ss_ts.append(ss)
+			self.pred_ts.append(pr)
 			if i > 0:
 				a.set_xticks([])
 			if i == 0:
@@ -83,13 +124,8 @@ class lmpc_visualizer(object):
 
 		self.it += 1
 
-	def plot_traj(self, state_cl, act_cl, state_preds, act_preds, t, SS, N, expl_con=None, shade=False):
-		self.clear_plots()
-
-		# if expl_con is not None and 'lin' in expl_con:
-		# 	lin_con = expl_con['lin']
-		# if expl_con is not None and 'ell' in expl_con:
-		# 	ell_con = expl_con['ell']
+	def plot_traj(self, state_cl, act_cl, state_preds, act_preds, t, SS, expl_con=None, shade=False):
+		# self.clear_plots()
 
 		if shade:
 			p1 = np.linspace(self.plot_lims[0][0], self.plot_lims[0][1], 15)
@@ -107,33 +143,28 @@ class lmpc_visualizer(object):
 
 		# Plot entire previous closed loop trajectory for comparison
 		if self.prev_pos_cl is not None:
-			n_a = len(self.prev_pos_cl)
-			c = [matplotlib.cm.get_cmap('jet')(i*(1./(n_a-1))) for i in range(n_a)]
 			for (i, s) in enumerate(self.prev_pos_cl):
+				if t == 0:
+					self.prev_trajs_xy[i].set_data(s[0,:], s[1,:])
 				plot_t = min(t, s.shape[1]-1)
-				self.pos_ax.plot(s[0,:], s[1,:], '.', c=c[i], markersize=1)
-				self.pos_ax.plot(s[0,plot_t], s[1,plot_t], 'o', c=c[i])
-				# self.pos_ax.text(s[0,0]+0.1, s[1,0]+0.1, 'Agent %i' % (i+1), fontsize=12, bbox=dict(facecolor='white', alpha=1.))
+				self.prev_pos[i].set_data(s[0,plot_t], s[1,plot_t])
 
 			agent_prev_cl = self.prev_pos_cl[self.agent_id]
 
-			# Plot the ellipsoidal constraint
-			# if expl_con is not None and 'ell' in expl_con:
-			# 	for i in range(t, t+pred_len):
-			# 		plot_t = min(i, agent_prev_cl.shape[1]-1)
-			# 		self.pos_ax.plot(agent_prev_cl[0,plot_t]+ell_con[plot_t]*np.cos(np.linspace(0,2*np.pi,100)),
-			# 			agent_prev_cl[1,plot_t]+ell_con[plot_t]*np.sin(np.linspace(0,2*np.pi,100)), '--', linewidth=0.7, c=c_pred[i-t])
-			# if expl_con is not None and 'lin' in expl_con:
 			if expl_con is not None:
 				boundary_x = np.linspace(self.plot_lims[0][0], self.plot_lims[0][1], 50)
 				# for i in range(t, t+pred_len):
+				counter = 0
 				for i in range(t+pred_len-1, t-1, -1): # Go backwards so that earlier stuff is plotted on top
 					plot_t = min(i, agent_prev_cl.shape[1]-1)
 					H = expl_con[plot_t][0]
 					g = expl_con[plot_t][1]
 					for j in range(H.shape[0]):
 						boundary_y = (-H[j,0]*boundary_x - g[j])/(H[j,1]+1e-10)
-						self.pos_ax.plot(boundary_x, boundary_y, '--', linewidth=0.7, c=c_pred[i-t])
+						self.expl_bound_xy[counter].set_data(boundary_x, boundary_y)
+						self.expl_bound_xy[counter].set_color(c_pred[i-t])
+						counter += 1
+						# self.pos_ax.plot(boundary_x, boundary_y, '--', linewidth=0.7, c=c_pred[i-t])
 
 					if shade:
 						for j in range(P1.shape[0]):
@@ -143,9 +174,11 @@ class lmpc_visualizer(object):
 									self.pos_ax.plot(test_pt[0], test_pt[1], '.', c=c_pred[i-t], markersize=1)
 
 		# Plot the closed loop position trajectory up to this iteration and the optimal solution at this iteration
-		self.pos_ax.scatter(SS[0,:], SS[1,:], marker='o', alpha=0.3, c='k')
-		self.pos_ax.scatter(pos_preds[0,:], pos_preds[1,:], marker='.', c=c_pred)
-		self.pos_ax.plot(pos_cl[0,:], pos_cl[1,:], 'k.')
+		self.ss_line.set_data(SS[0,:], SS[1,:])
+		for i in range(pred_len):
+			self.pred_xy[i].set_data(pos_preds[0,i], pos_preds[1,i])
+			self.pred_xy[i].set_color(c_pred[i])
+		self.traj_line.set_data(pos_cl[0,:], pos_cl[1,:])
 
 		# Plot the closed loop state trajectory up to this iteration and the optimal solution at this iteration
 		for (i, a) in enumerate(self.ts_axs):
@@ -153,18 +186,22 @@ class lmpc_visualizer(object):
 				plot_idx = self.n_act_dims-i-1
 				if self.prev_act_cl is not None:
 					l = self.prev_act_cl[self.agent_id].shape[1]
-					a.plot(range(l), self.prev_act_cl[self.agent_id][plot_idx,:], 'b.', markersize=2)
-				a.plot(range(t, t+pred_len-1), act_preds[plot_idx,:], 'g.-', markersize=3)
-				a.plot(range(cl_len-1), act_cl[plot_idx,:], 'k.', markersize=2)
+					self.prev_traj_ts[i].set_data(range(l), self.prev_act_cl[self.agent_id][plot_idx,:])
+				self.pred_ts[i].set_data(range(t, t+pred_len-1), act_preds[plot_idx,:])
+				self.curr_traj_ts[i].set_data(range(cl_len-1), act_cl[plot_idx,:])
+				a.relim()
+				a.autoscale_view()
 			else:
 				plot_idx = (self.n_state_dims-1)-(i-self.n_act_dims)
 				if self.prev_state_cl is not None:
 					l = self.prev_state_cl[self.agent_id].shape[1]
-					a.plot(range(l), self.prev_state_cl[self.agent_id][plot_idx,:], 'b.', markersize=2)
-				a.scatter(range(t+N, t+N+SS.shape[1]), SS[plot_idx,:], marker='o', alpha=0.3, c='k')
-				a.plot(range(t, t+pred_len), state_preds[plot_idx,:], 'g.-', markersize=3)
-				a.plot(range(cl_len-1), state_cl[plot_idx,:-1], 'k.', markersize=2)
-
+					self.prev_traj_ts[i].set_data(range(l), self.prev_state_cl[self.agent_id][plot_idx,:])
+					a.set_xlim([0, l+1])
+				self.ss_ts[i].set_data(range(t+pred_len, t+pred_len+SS.shape[1]), SS[plot_idx,:])
+				self.pred_ts[i].set_data(range(t, t+pred_len), state_preds[plot_idx,:])
+				self.curr_traj_ts[i].set_data(range(cl_len-1), state_cl[plot_idx,:-1])
+				a.relim()
+				a.autoscale_view()
 		try:
 			self.fig.canvas.draw()
 		except KeyboardInterrupt:

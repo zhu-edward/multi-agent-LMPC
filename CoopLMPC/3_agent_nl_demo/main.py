@@ -116,7 +116,7 @@ def solve_lmpc(lmpc, x_0, x_f, model_agent, verbose=False, visualizer=None, paus
 		print('ts: %g, d: %g, x: %g, y: %g, phi: %g, v: %g' % (t, la.norm(x_tp1-x_f, ord=2), x_t[0], x_t[1], x_t[2]*180.0/np.pi, x_t[3]))
 
 		if visualizer is not None:
-			visualizer.plot_traj(xcl, ucl, x_pred, u_pred, t, SS, N, lmpc.expl_constrs, shade=True)
+			visualizer.plot_traj(xcl, ucl, x_pred, u_pred, t, SS, lmpc.expl_constrs, shade=False)
 
 		if la.norm(x_tp1-x_f, ord=2) <= 10**tol:
 			print('Tolerance reached, agent reached goal state')
@@ -298,8 +298,8 @@ def main():
 	os.makedirs(exp_dir)
 
 	# Initialize visualizer for each agent
-	# lmpc_vis = [lmpc_visualizer(pos_dims=[0,1], n_state_dims=n_x, n_act_dims=n_u, agent_id=i, plot_lims=plot_lims) for i in range(n_a)]
-	lmpc_vis = [None for i in range(n_a)]
+	lmpc_vis = [lmpc_visualizer(pos_dims=[0,1], n_state_dims=n_x, n_act_dims=n_u, agent_id=i, n_agents=n_a, plot_lims=plot_lims) for i in range(n_a)]
+	# lmpc_vis = [None for i in range(n_a)]
 
 	raw_input('Ready to run LMPC, press enter to continue...')
 
@@ -307,7 +307,7 @@ def main():
 	# iteration loop
 	for it in range(totalIterations):
 		print('****************** Iteration %i ******************' % (it+1))
-		plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, it=it)
+		# plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, it=it)
 
 		pdb.set_trace()
 
