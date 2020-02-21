@@ -40,7 +40,7 @@ class lmpc_visualizer(object):
 		self.prev_trajs_xy = []
 		self.prev_pos = []
 		for i in range(self.n_a):
-			t, = self.pos_ax.plot(x_data, y_data, '.', markersize=1, c=self.c[i])
+			t, = self.pos_ax.plot(x_data, y_data, '.', markersize=2, c=self.c[i])
 			p, = self.pos_ax.plot(x_data, y_data, 'o', c=self.c[i])
 			self.prev_trajs_xy.append(t)
 			self.prev_pos.append(p)
@@ -119,7 +119,7 @@ class lmpc_visualizer(object):
 		if state_traj is not None:
 			self.prev_pos_cls = []
 			for (i, s) in enumerate(state_traj):
-				self.prev_pos_cls.append(s_a[self.pos_dims,:] for s_a in s])
+				self.prev_pos_cls.append([s_a[self.pos_dims,:] for s_a in s])
 			self.prev_state_cl = state_traj[-1]
 		if act_traj is not None:
 			self.prev_act_cl = act_traj[-1]
@@ -147,12 +147,12 @@ class lmpc_visualizer(object):
 		if self.prev_pos_cls is not None:
 			for i in range(self.n_a):
 				if t == 0:
-					for s in self.prev_pos_cls:
-						self.prev_trajs_xy[i].set_data[s[i][0,:], s[i][1,:]]
-				plot_t = min(t, s[i].shape[1]-1)
-				self.prev_pos[i].set_data[s[i][0,plot_t], s[i][1,plot_t]]
+					for s_it in self.prev_pos_cls:
+						self.prev_trajs_xy[i].set_data(s_it[i][0,:], s_it[i][1,:])
+				plot_t = min(t, self.prev_pos_cls[-1][i].shape[1]-1)
+				self.prev_pos[i].set_data(self.prev_pos_cls[-1][i][0,plot_t], self.prev_pos_cls[-1][i][1,plot_t])
 
-			agent_prev_cl = self.prev_pos_cl[self.agent_id]
+			agent_prev_cl = self.prev_pos_cls[-1][self.agent_id]
 
 			if expl_con is not None:
 				boundary_x = np.linspace(self.plot_lims[0][0], self.plot_lims[0][1], 50)

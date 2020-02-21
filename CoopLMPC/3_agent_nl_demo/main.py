@@ -290,7 +290,7 @@ def main():
 	# ss_n_t = 5
 	ss_n_j = 5
 
-	totalIterations = 15 # Number of iterations to perform
+	totalIterations = 30 # Number of iterations to perform
 	start_time = time.strftime("%Y-%m-%d_%H-%M-%S")
 	exp_dir = '/'.join((out_dir, start_time))
 	os.makedirs(exp_dir)
@@ -308,7 +308,7 @@ def main():
 		it_dir = '/'.join((exp_dir, 'it_%i' % (it+1)))
 		os.makedirs(it_dir)
 
-		plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, it=it)
+		plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, save_video=True, it=it)
 
 		# Compute safe sets and exploration spaces along previous trajectory
 		ss_idxs, expl_constrs = get_safe_set(xcls, x_f, lmpc_control_agents, ss_n_t, ss_n_j)
@@ -368,7 +368,7 @@ def main():
 		pickle.dump(u_ol_it, open('/'.join((it_dir, 'u_ol.pkl')), 'wb'))
 
 	# Plot last trajectory
-	plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, it=it)
+	plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, save_video=True, it=it)
 	#=====================================================================================
 
 	plt.show()
