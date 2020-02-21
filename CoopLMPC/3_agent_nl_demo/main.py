@@ -85,8 +85,8 @@ def solve_lmpc(lmpc, x_0, x_f, model_agent, verbose=False, visualizer=None, paus
 	n_x = lmpc.n_x
 	n_u = lmpc.n_u
 
-	x_pred_log = []
-	u_pred_log = []
+	x_ol = []
+	u_ol = []
 
 	xcl = x_0.reshape((-1,1)) # initialize system state
 	ucl = np.empty((n_u,0))
@@ -100,11 +100,11 @@ def solve_lmpc(lmpc, x_0, x_f, model_agent, verbose=False, visualizer=None, paus
 		x_pred, u_pred, cost, SS, N = lmpc.solve(t, x_t, x_f, tol, verbose=verbose) # Solve FTOCP
 		# Inspect incomplete trajectory
 		if x_pred is None or u_pred is None and visualizer is not None:
-			# visualizer.traj_inspector(xcl, ucl, x_pred_log, u_pred_log, t, lmpc.SS_t, lmpc.expl_constrs)
+			# visualizer.traj_inspector(xcl, ucl, x_ol, u_ol, t, lmpc.SS_t, lmpc.expl_constrs)
 			sys.exit()
 		else:
-			x_pred_log.append(x_pred)
-			u_pred_log.append(u_pred)
+			x_ol.append(x_pred)
+			u_ol.append(u_pred)
 
 		u_t = u_pred[:,0]
 		# Read input and apply it to the system
@@ -131,8 +131,7 @@ def solve_lmpc(lmpc, x_0, x_f, model_agent, verbose=False, visualizer=None, paus
 	# if inspect:
 		# visualizer.traj_inspector(xcl, ucl, x_pred_log, u_pred_log, t, lmpc.SS_t, lmpc.expl_constrs)
 
-	# print np.round(np.array(xcl).T, decimals=2) # Uncomment to print trajectory
-	return xcl, ucl
+	return xcl, ucl, x_ol, u_ol
 
 def main():
 	parser = argparse.ArgumentParser()
@@ -272,7 +271,6 @@ def main():
 	for i in range(n_a):
 		x_f[i] = xcl_feas[i][:,-1]
 
-	# pdb.set_trace()
 	# ====================================================================================
 
 	# ====================================================================================
@@ -292,30 +290,30 @@ def main():
 	# ss_n_t = 5
 	ss_n_j = 5
 
-	totalIterations = 5 # Number of iterations to perform
+	totalIterations = 15 # Number of iterations to perform
 	start_time = time.strftime("%Y-%m-%d_%H-%M-%S")
 	exp_dir = '/'.join((out_dir, start_time))
 	os.makedirs(exp_dir)
 
 	# Initialize visualizer for each agent
 	lmpc_vis = [lmpc_visualizer(pos_dims=[0,1], n_state_dims=n_x, n_act_dims=n_u, agent_id=i, n_agents=n_a, plot_lims=plot_lims) for i in range(n_a)]
-	# lmpc_vis = [None for i in range(n_a)]
+	# lmpc_vis = None
 
-	raw_input('Ready to run LMPC, press enter to continue...')
+	print('Starting multi-agent LMPC...')
 
 	# run simulation
 	# iteration loop
 	for it in range(totalIterations):
 		print('****************** Iteration %i ******************' % (it+1))
-		# plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, it=it)
+		it_dir = '/'.join((exp_dir, 'it_%i' % (it+1)))
+		os.makedirs(it_dir)
 
-		pdb.set_trace()
+		plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, it=it)
 
 		# Compute safe sets and exploration spaces along previous trajectory
 		ss_idxs, expl_constrs = get_safe_set(xcls, x_f, lmpc_control_agents, ss_n_t, ss_n_j)
 
 		# inspect_safe_set(xcls, ucls, ss_idxs, expl_constrs, plot_lims)
-		# pdb.set_trace()
 
 		for i in range(n_a):
 			print('Adding trajectories and updating safe sets for agent %i' % (i+1))
@@ -323,43 +321,51 @@ def main():
 			lmpc[i].update_safe_sets(ss_idxs[i])
 			lmpc[i].update_exploration_constraints(expl_constrs[i])
 
-		# pdb.set_trace()
-
-		for lv in lmpc_vis:
-			if lv is not None:
-				lv.update_prev_trajs(state_traj=xcls[-1], act_traj=ucls[-1])
+		if lmpc_vis is not None:
+			for lv in lmpc_vis:
+				lv.update_prev_trajs(state_traj=xcls, act_traj=ucls)
 
 		it_start = time.time()
 
-		x_it = []
-		u_it = []
+		x_cl_it = []
+		u_cl_it = []
+		x_ol_it = []
+		u_ol_it = []
+
 		# agent loop
 		for i in range(n_a):
 			print('Solving trajectory for agent %i' % (i+1))
 			agent_start = time.time()
-			agent_dir = '/'.join((exp_dir, 'it_%i' % (it+1), 'agent_%i' % (i+1)))
+			agent_dir = '/'.join((it_dir, 'agent_%i' % (i+1)))
 			os.makedirs(agent_dir)
 			if lmpc_vis[i] is not None:
-				lmpc_vis[i].set_plot_dir(agent_dir)
+				lmpc_vis[i].set_save_dir(agent_dir)
 
-			xcl, ucl = solve_lmpc(lmpc[i], x_0[i], x_f[i], model_agents[i], visualizer=lmpc_vis[i], pause=pause_each_solve, tol=tol)
-			# opt_cost = lmpc[i].addTrajectory(xcl, ucl)
-			# obj_plot.update(np.array([it, opt_cost]).T, i)
-			ucl= np.append(ucl, np.zeros((n_u,1)), axis=1)
+			x_cl, u_cl, x_ol, u_ol = solve_lmpc(lmpc[i], x_0[i], x_f[i], model_agents[i], visualizer=lmpc_vis[i], pause=pause_each_solve, tol=tol)
+			u_cl= np.append(u_cl, np.zeros((n_u,1)), axis=1)
 
-			x_it.append(xcl)
-			u_it.append(ucl)
+			x_cl_it.append(x_cl)
+			u_cl_it.append(u_cl)
+			x_ol_it.append(x_ol)
+			u_ol_it.append(u_ol)
 
 			agent_end = time.time()
-			print('Time elapsed: %g, trajectory length: %i' % (agent_end-agent_start, xcl.shape[1]))
+			print('Time elapsed: %g, trajectory length: %i' % (agent_end-agent_start, x_cl.shape[1]))
 
-		xcls.append(x_it)
-		ucls.append(u_it)
+		xcls.append(x_cl_it)
+		ucls.append(u_cl_it)
 
 		it_end = time.time()
 		print('Time elapsed for iteration %i: %g s' % (it+1, it_end - it_start))
 
-		pickle.dump(lmpc, open('/'.join((exp_dir, 'it_%i.pkl' % (it+1))), 'wb'))
+		# Save iteration data
+		pickle.dump(lmpc, open('/'.join((it_dir, 'lmpc.pkl')), 'wb'))
+		pickle.dump(ss_idxs, open('/'.join((it_dir, 'ss.pkl')), 'wb'))
+		pickle.dump(expl_constrs, open('/'.join((it_dir, 'exp_constr.pkl')), 'wb'))
+		pickle.dump(xcls, open('/'.join((it_dir, 'x_cls.pkl')), 'wb'))
+		pickle.dump(ucls, open('/'.join((it_dir, 'u_cls.pkl')), 'wb'))
+		pickle.dump(x_ol_it, open('/'.join((it_dir, 'x_ol.pkl')), 'wb'))
+		pickle.dump(u_ol_it, open('/'.join((it_dir, 'u_ol.pkl')), 'wb'))
 
 	# Plot last trajectory
 	plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, it=it)

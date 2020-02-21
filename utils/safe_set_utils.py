@@ -16,7 +16,8 @@ def get_safe_set(x_cls, xf, agents, des_num_ts='all', des_num_iters='all'):
 	c = [matplotlib.cm.get_cmap('jet')(i*(1./(n_a-1))) for i in range(n_a)]
 
 	# Enumerate pairs of agents
-	pairs = map(list, itertools.combinations(range(n_a), 2))
+	pairs = list(itertools.combinations(range(n_a), 2))
+
 	# Get the minimum distance for collision avoidance between agents based on the geometry of their occupied space
 	min_dist = []
 	r_a = [agents[i].get_collision_buff_r() for i in range(n_a)]
@@ -38,8 +39,6 @@ def get_safe_set(x_cls, xf, agents, des_num_ts='all', des_num_iters='all'):
 			if agent_cl.shape[1] > num_ts:
 				num_ts = agent_cl.shape[1]
 		cl_lens.append(it_cl_lens)
-
-	# pdb.set_trace()
 
 	# Set number of time steps to be included to the trajectory length if it was larger
 	if num_ts < des_num_ts:
@@ -178,14 +177,6 @@ def get_safe_set(x_cls, xf, agents, des_num_ts='all', des_num_iters='all'):
 					a_0 = a_0_max - 1e-5 # Deal with precision issues when a point in the safe set is on the exploration space boundary
 					a_1 = a_1_max - 1e-5
 
-				# print('-------------------------')
-				# print(p)
-				# print(margin, d)
-				# print(w_0, a_0_min, a_0, a_0_max)
-				# print(w_1, a_1_min, a_1, a_1_max)
-				# if (t == 17):
-				# 	pdb.set_trace()
-
 				# Exploration spaces
 				H_t[p[0]].append(w)
 				g_t[p[0]].append(b+a_0)
@@ -207,8 +198,6 @@ def get_safe_set(x_cls, xf, agents, des_num_ts='all', des_num_iters='all'):
 
 		for a in range(n_a):
 			safe_sets_idxs[a].append(safe_set_cand_t[a])
-			# exploration_spaces[a][0].append(H_t[a])
-			# exploration_spaces[a][1].append(g_t[a])
 			exploration_spaces[a].append((H_t[a], g_t[a]))
 
 	# Adjust safe sets from before last_invalid_t to have the same iteration and time range and test that safe sets are contained

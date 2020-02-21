@@ -30,18 +30,18 @@ def plot_bike_agent_trajs(x, u, agents, dt, trail=False, shade=False, plot_lims=
 	# fig = plt.figure(dpi=dpi, figsize=(10,5))
 	fig = plt.figure(figsize=(12,7))
 	# ax = fig.gca()
-	ax = fig.add_axes([0.05, 0, 0.5, 1.0])
+	ax = fig.add_axes([0.03, 0.03, 0.48, 0.95])
 	if plot_lims is not None:
 		ax.set_xlim(plot_lims[0])
 		ax.set_ylim(plot_lims[1])
 
-	psi_ax = fig.add_axes([0.6, 0.8, 0.4, 0.15])
+	psi_ax = fig.add_axes([0.58, 0.78, 0.4, 0.2])
 	psi_ax.set_xticks([])
-	v_ax = fig.add_axes([0.6, 0.55, 0.4, 0.15])
+	v_ax = fig.add_axes([0.58, 0.53, 0.4, 0.2])
 	v_ax.set_xticks([])
-	df_ax = fig.add_axes([0.6, 0.3, 0.4, 0.15])
+	df_ax = fig.add_axes([0.58, 0.28, 0.4, 0.2])
 	df_ax.set_xticks([])
-	a_ax = fig.add_axes([0.6, 0.05, 0.4, 0.15])
+	a_ax = fig.add_axes([0.58, 0.03, 0.4, 0.2])
 
 	for i in range(n_a):
 		psi_ax.plot(dt*np.arange(0,traj_lens[i]), x[i][2,:])

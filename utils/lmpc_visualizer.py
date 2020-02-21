@@ -10,14 +10,14 @@ import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 
 class lmpc_visualizer(object):
-	def __init__(self, pos_dims, n_state_dims, n_act_dims, agent_id, n_agents, plot_lims=None, plot_dir=None):
+	def __init__(self, pos_dims, n_state_dims, n_act_dims, agent_id, n_agents, plot_lims=None, save_dir=None):
 		if len(pos_dims) > 2:
 			raise(ValueError('Can only plot 2 position dimensions'))
 		self.agent_id = agent_id
 		self.pos_dims = pos_dims
 		self.n_state_dims = n_state_dims
 		self.n_act_dims = n_act_dims
-		self.plot_dir = plot_dir
+		self.save_dir = save_dir
 		self.plot_lims = plot_lims
 
 		self.n_a = n_agents
@@ -94,8 +94,8 @@ class lmpc_visualizer(object):
 
 		self.it = 0
 
-	def set_plot_dir(self, plot_dir):
-		self.plot_dir = plot_dir
+	def set_save_dir(self, save_dir):
+		self.save_dir = save_dir
 
 	def clear_plots(self):
 		self.pos_ax.clear()
@@ -114,13 +114,15 @@ class lmpc_visualizer(object):
 			if i == 0:
 				a.set_xlabel('$t$')
 
-	def update_prev_trajs(self, state_traj=None, act_traj=None):
+	def update_prev_trajs(self, state_traj, act_traj=None):
 		# state_traj is a list of numpy arrays. Each numpy array is the closed-loop trajectory of an agent.
 		if state_traj is not None:
-			self.prev_pos_cl = [s[self.pos_dims,:] for s in state_traj]
-			self.prev_state_cl = state_traj
+			self.prev_pos_cls = []
+			for (i, s) in enumerate(state_traj):
+				self.prev_pos_cls.append(s_a[self.pos_dims,:] for s_a in s])
+			self.prev_state_cl = state_traj[-1]
 		if act_traj is not None:
-			self.prev_act_cl = act_traj
+			self.prev_act_cl = act_traj[-1]
 
 		self.it += 1
 
@@ -141,13 +143,14 @@ class lmpc_visualizer(object):
 
 		c_pred = [matplotlib.cm.get_cmap('jet')(i*(1./(pred_len-1))) for i in range(pred_len)]
 
-		# Plot entire previous closed loop trajectory for comparison
-		if self.prev_pos_cl is not None:
-			for (i, s) in enumerate(self.prev_pos_cl):
+		# Plot all previous closed loop trajectory for comparison
+		if self.prev_pos_cls is not None:
+			for i in range(self.n_a):
 				if t == 0:
-					self.prev_trajs_xy[i].set_data(s[0,:], s[1,:])
-				plot_t = min(t, s.shape[1]-1)
-				self.prev_pos[i].set_data(s[0,plot_t], s[1,plot_t])
+					for s in self.prev_pos_cls:
+						self.prev_trajs_xy[i].set_data[s[i][0,:], s[i][1,:]]
+				plot_t = min(t, s[i].shape[1]-1)
+				self.prev_pos[i].set_data[s[i][0,plot_t], s[i][1,plot_t]]
 
 			agent_prev_cl = self.prev_pos_cl[self.agent_id]
 
@@ -207,13 +210,12 @@ class lmpc_visualizer(object):
 		except KeyboardInterrupt:
 			sys.exit()
 
-		# Save plots if plot_dir was specified
-		if self.plot_dir is not None:
+		# Save plots if save_dir was specified
+		if self.save_dir is not None:
 			f_name = 'it_%i_time_%i.png' % (self.it, t)
 			if self.agent_id is not None:
 				f_name = '_'.join((('agent_%i' % (self.agent_id+1)), f_name))
-			f_name = '_'.join(('pos', f_name))
-			self.fig.savefig('/'.join((self.plot_dir, f_name)))
+			self.fig.savefig('/'.join((self.save_dir, f_name)))
 
 	# A tool for inspecting the trajectory at an iteration, when this function is called, the program will enter into a while loop which waits for user input to inspect the trajectory
 	def traj_inspector(self, xcl, ucl, x_preds, u_preds, start_t, expl_con=None):
