@@ -125,26 +125,43 @@ class LMPC_ADMM(object):
 			syslist[m][m].Qfun_vector = 0
 			syslist[m][m].Qfun_vector = np.expand_dims(np.array(list(itertools.chain.from_iterable(self.Qfun[m]))), 0) # From a 2D list to a 1D array
 
+			# pdb.set_trace()
+
+			# Reinitialize lambdas to zero
+			n = syslist[m][m].n
+			n_ss = syslist[m][m].SS_vector.shape[1]
+
+			syslist[m][m].lambda_x = np.zeros(n * (N+1))
+			syslist[m][m].lambda_x_old = np.zeros(n * (N+1))
+			syslist[m][m].lambda_a = np.zeros(n_ss)
+			syslist[m][m].lambda_a_old = np.zeros(n_ss)
+			syslist[m][m].a = np.zeros(n_ss)  # a stands for alpha
+			syslist[m][m].a_old = np.zeros(n_ss)
+
+			for t in syslist[m][m].Ni_from:
+				syslist[m][t].lambda_x = np.zeros(n * (N+1))
+				syslist[m][m].lambda_x_old = np.zeros(n * (N+1))
+
 		for ti in range(ADMM_iterations):
 
-			print(["ADMM Iteration:", ti])
+			# print(["ADMM Iteration:", ti])
 
 			for m in range(M):
 				syslist = ftocp_ADMM_list[m].solve_ADMM2(syslist, m, rho)
 
-				print(["Agent:", m, "x:", syslist[m][m].lambda_x])
+				# print(["Agent:", m, "x:", syslist[m][m].lambda_x])
 
 			for m in range(M):
 				syslist = ftocp_ADMM_list[m].solve_ADMM1(syslist[m][m].xt, syslist, m, N, rho, verbose, syslist[m][m].SS_vector, syslist[m][m].Qfun_vector, self.CVX)
 
-				print(["Agent:", m, "x:", syslist[m][m].x])
-				for t in syslist[m][m].Ni_from:
-					print(["Agent:", m, "neighbor:", t, "xt:", syslist[m][t].x])
+				# print(["Agent:", m, "x:", syslist[m][m].x])
+				# for t in syslist[m][m].Ni_from:
+				# 	print(["Agent:", m, "neighbor:", t, "xt:", syslist[m][t].x])
 
 			for m in range(M):
 				syslist = ftocp_ADMM_list[m].update_ADMM1(syslist, m)
 
-
-
-
-
+			diff_1 = la.norm(syslist[0][0].x_old.flatten(order='F') - syslist[2][0].x_old.flatten(order='F'))
+			diff_2 = la.norm(syslist[1][1].x_old.flatten(order='F') - syslist[0][1].x_old.flatten(order='F'))
+			diff_3 = la.norm(syslist[2][2].x_old.flatten(order='F') - syslist[1][2].x_old.flatten(order='F'))
+			print('ADMM iteration: %i, diff 1: %g, diff 2: %g, diff 3: %g' % (ti, diff_1, diff_2, diff_3))

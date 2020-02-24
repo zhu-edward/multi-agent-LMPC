@@ -1,5 +1,4 @@
 import numpy as np
-import control
 from FTOCP_ADMM import FTOCP_ADMM
 from FTOCP import FTOCP
 from LMPC_ADMM import LMPC_ADMM
@@ -9,7 +8,7 @@ import pdb
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
-import copy
+import copy, pdb
 import pickle
 from scipy.linalg import block_diag
 
@@ -84,7 +83,7 @@ def main():
 
 
     # time Loop (Perform the task until close to the origin)
-    while np.dot(xt, xt) > 10**(-15):
+    while np.dot(xt, xt) > 10**(-4):
         xt = xcl_feasible[time] # Read measurements
 
         ftocp_for_mpc.solve(xt, verbose = False) # Solve FTOCP
@@ -94,6 +93,7 @@ def main():
         ucl_feasible.append(ut)
         xcl_feasible.append(ftocp_for_mpc.model(xcl_feasible[time], ut))
         time += 1
+        print(xt)
 
     print(np.round(np.array(xcl_feasible).T, decimals=2))
     print(np.round(np.array(ucl_feasible).T, decimals=2))
@@ -196,12 +196,11 @@ def main():
 
     lmpc_ADMM.addTrajectory(ftocp_ADMM_list, syslist, M)        # xcl_feasible, ucl_feasible)         # Add feasible trajectory to the safe set
 
-
-
-
+    # pdb.set_trace()
 
     totalIterations = 10 # Number of iterations to perform
-    ADMM_iterations = 200
+    ADMM_iterations = 500
+    # ADMM_iterations = 10
 
     # run simulation
     # iteration loop
@@ -225,31 +224,34 @@ def main():
             syslist[m][m].ucl = []
             n_count += syslist[m][m].n
 
-        print(["Iteration", it, "xcl", syslist[0][0].xcl, "time", time])
+        # print(["Iteration", it, "xcl", syslist[0][0].xcl, "time", time])
 
         # time Loop (Perform the task until close to the origin)
-        while np.linalg.norm(syslist[m][m].xt) > 10 ** (-10):
+        while np.linalg.norm(syslist[m][m].xt) > 10 ** (-4):
 
             for m in range(M):
                 syslist[m][m].xt = syslist[m][m].xcl[time*syslist[m][m].n:(time+1)*syslist[m][m].n]
 
-            print(["Iteration", it, "xcl", syslist[0][0].xcl, "time", time])
+            print(["Iteration", it, "time", time, "xt", syslist[0][0].xt])
 
             lmpc_ADMM.solve(ftocp_ADMM_list, syslist, M, N, rho, ADMM_iterations, verbose = False)
 
-            # Read optimal input
-            # ut = lmpc.uPred[:,0]#[0]
-
-            #print("does not even enter this routine of appending the closed loop x")
             for m in range(M):
-                ut = syslist[m][m].u[:, 0]  # [0]
+                ut = syslist[m][m].uPred[:,0]  # [0]
+
+                xt = syslist[m][m].xt
+                for t in syslist[m][m].Ni_from:
+                    xt = np.append(xt, syslist[t][t].xt)
+
                 # Apply optimal input to the system
                 if syslist[m][m].ucl == []:
                     syslist[m][m].ucl = np.append(syslist[m][m].ucl,ut)
-                    syslist[m][m].xcl = np.append([syslist[m][m].xcl], [lmpc_ADMM.ftocp_ADMM[m].model(syslist[m][m], syslist[m][m].xt, ut)])
+                    # syslist[m][m].xcl = np.append([syslist[m][m].xcl], [lmpc_ADMM.ftocp_ADMM[m].model(syslist[m][m], syslist[m][m].xt, ut)])
+                    syslist[m][m].xcl = np.append([syslist[m][m].xcl], [lmpc_ADMM.ftocp_ADMM[m].model(syslist[m][m], xt, ut)])
                 else:
                     syslist[m][m].ucl = np.stack((syslist[m][m].ucl, ut))
-                    syslist[m][m].xcl = np.stack(([syslist[m][m].xcl], [lmpc_ADMM.ftocp_ADMM[m].model(syslist[m][m], syslist[m][m].xt, ut)]))
+                    # syslist[m][m].xcl = np.stack(([syslist[m][m].xcl], [lmpc_ADMM.ftocp_ADMM[m].model(syslist[m][m], syslist[m][m].xt, ut)]))
+                    syslist[m][m].xcl = np.stack(([syslist[m][m].xcl], [lmpc_ADMM.ftocp_ADMM[m].model(syslist[m][m], xt, ut)]))
             time += 1
 
 
@@ -261,9 +263,6 @@ def main():
 
               #  break
               #  print('broke')
-
-
-            print(["Iteration", it, "xcl", syslist[0][0].xcl, "time", time])
 
             if time >= 1:
                 halt = 1

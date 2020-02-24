@@ -1,5 +1,5 @@
 import numpy as np
-import pdb 
+import pdb
 import scipy
 from cvxpy import *
 import pickle
@@ -124,21 +124,30 @@ class FTOCP_ADMM(object):
         # ADMM cost terms
         lambda_x = syslist[m][m].lambda_x
         lambda_a = syslist[m][m].lambda_a
-        for t in syslist[m][m].Ni_from:
-            lambda_x = np.append(lambda_x , syslist[m][t].lambda_x)
+        # for t in syslist[m][m].Ni_from:
+        #     lambda_x = np.append(lambda_x , syslist[m][t].lambda_x)
 
-        cost += lambda_x * xVar.flatten()
+        # xVar_flat = vec(xVar)
+        # cost += lambda_x * xVar.flatten()
+        # cost += lambda_x * xVar_flat
         cost += lambda_a * alphaVar
 
         nt_count = syslist[m][m].n
         for t in syslist[m][m].Ni_from:
-            cost += (rho) * norm( xVar[nt_count:nt_count+syslist[t][t].n,:].flatten() - (syslist[m][t].x_old.flatten() + syslist[t][t].x_old.flatten())/2)**2
+            # cost += (rho) * norm( xVar[nt_count:nt_count+syslist[t][t].n,:].flatten() - (syslist[m][t].x_old.flatten() + syslist[t][t].x_old.flatten())/2)**2
+            cost += (rho) * norm(vec(xVar[nt_count:nt_count+syslist[t][t].n,:]) - (syslist[m][t].x_old.flatten(order='F') + syslist[t][t].x_old.flatten(order='F'))/2)**2
+            # cost += syslist[m][t].lambda_x*(vec(xVar[nt_count:nt_count+syslist[t][t].n,:]) - (syslist[m][t].x_old.flatten(order='F') + syslist[t][t].x_old.flatten(order='F')))
+            cost += syslist[m][t].lambda_x*vec(xVar[nt_count:nt_count+syslist[t][t].n,:])
         #    for k in syslist[t][t].Ni_to:
         #        cost += (rho) * norm( xVar[nt_count:nt_count+syslist[t][t].n,:].flatten() - (syslist[m][t].x_old.flatten() + syslist[k][t].x_old.flatten())/2)**2
-            nt_count: nt_count + syslist[t][t].n
+            nt_count = nt_count + syslist[t][t].n
 
         for t in syslist[m][m].Ni_to:
-            cost += (rho) * norm( xVar[0:syslist[m][m].n,:].flatten() - (syslist[m][m].x_old.flatten() + syslist[t][m].x_old.flatten())/2)**2
+            # cost += (rho) * norm( xVar[0:syslist[m][m].n,:].flatten() - (syslist[m][m].x_old.flatten() + syslist[t][m].x_old.flatten())/2)**2
+            cost += (rho) * norm( vec(xVar[0:syslist[m][m].n,:]) - (syslist[m][m].x_old.flatten(order='F') + syslist[t][m].x_old.flatten(order='F'))/2)**2
+            # cost += lambda_x*(vec(xVar[0:syslist[m][m].n,:]) - (syslist[m][m].x_old.flatten(order='F') + syslist[t][m].x_old.flatten(order='F')))
+
+        cost += lambda_x*vec(xVar[0:syslist[m][m].n,:])
 
         # make one list out of Ni_from and Ni_to without redundant terms!
         for t in Ni_from_to:
@@ -151,7 +160,7 @@ class FTOCP_ADMM(object):
         problem = Problem(Minimize(cost), constr)
         if CVX == True:
             try:
-                problem.solve(verbose=True, solver=ECOS) # I find that ECOS is better please use it when solving QPs
+                problem.solve(verbose=False, solver=ECOS) # I find that ECOS is better please use it when solving QPs
             except:
                 halt = 1
         else:
@@ -167,13 +176,15 @@ class FTOCP_ADMM(object):
         syslist[m][m].uADMM1 = u
         syslist[m][m].aADMM1 = alpha
 
-        syslist[m][m].xPred = x[0:syslist[m][m].n,:].flatten()
+        # syslist[m][m].xPred = x[0:syslist[m][m].n,:].flatten(order='F')
+        syslist[m][m].xPred = x[0:syslist[m][m].n,:]
         syslist[m][m].uPred = u
         syslist[m][m].aPred = alpha
 
         nx_count = syslist[m][m].n
         for t in syslist[m][m].Ni_from:
-            syslist[m][t].xPred = x[nx_count:nx_count+syslist[t][t].n, :].flatten()
+            # syslist[m][t].xPred = x[nx_count:nx_count+syslist[t][t].n, :].flatten(order='F')
+            syslist[m][t].xPred = x[nx_count:nx_count+syslist[t][t].n, :]
             nx_count += syslist[t][t].n
 
   #      try:
@@ -250,7 +261,7 @@ class FTOCP_ADMM(object):
     #    t = syslist[m][m].Ni_from[0]
     #    if np.linalg.norm(np.subtract(x[syslist[m][m].n:syslist[m][m].n+syslist[t][t].n, 0], syslist[t][t].xt[0:syslist[t][t].n])) >= 0.0001:
     #        halt = 1
-       
+
         return syslist
         """
 
@@ -272,7 +283,8 @@ class FTOCP_ADMM(object):
         syslist[m][m].lambda_x_old = syslist[m][m].lambda_x
         lambda_x = syslist[m][m].lambda_x
         for t in syslist[m][m].Ni_to:
-            lambda_x +=  rho * (syslist[m][m].x_old.flatten() - syslist[t][m].x_old.flatten())
+            # lambda_x +=  rho * (syslist[m][m].x_old.flatten() - syslist[t][m].x_old.flatten())
+            lambda_x +=  rho * (syslist[m][m].x_old.flatten(order='F') - syslist[t][m].x_old.flatten(order='F'))
             #lambda_x += rho * (syslist[m][m].x.flatten() - syslist[t][m].x.flatten())
         #syslist[m][m].lambda_x_old = syslist[m][m].lambda_x
         syslist[m][m].lambda_x = lambda_x
@@ -291,7 +303,8 @@ class FTOCP_ADMM(object):
         for t in syslist[m][m].Ni_from:
             syslist[m][t].lambda_x_old = syslist[m][t].lambda_x
             lambda_x_t = syslist[m][t].lambda_x
-            lambda_x_t +=  rho * (syslist[m][t].x_old.flatten() - syslist[t][t].x_old.flatten())
+            # lambda_x_t +=  rho * (syslist[m][t].x_old.flatten() - syslist[t][t].x_old.flatten())
+            lambda_x_t +=  rho * (syslist[m][t].x_old.flatten(order='F') - syslist[t][t].x_old.flatten(order='F'))
             #lambda_x_t += rho * (syslist[m][t].x.flatten() - syslist[t][t].x.flatten())
         #    for k in syslist[t][t].Ni_to:
         #        lambda_x_t += rho * (syslist[m][t].x_old.flatten() - syslist[k][t].x_old.flatten())
@@ -309,10 +322,3 @@ class FTOCP_ADMM(object):
     def model(self, sysm, x, u):
         # Compute state evolution
         return (np.dot(sysm.ANi,x) + np.squeeze(np.dot(sysm.Bi,u)))  #.tolist()
-
-
-
-
-
-
-

@@ -58,6 +58,3 @@ class sysi(object):
         self.xADMM1_track = []
         self.uADMM1_track = []
         self.aADMM1_track = []
-
-
-
