@@ -28,7 +28,7 @@ def get_safe_set(x_cls, xf, agents, des_num_ts='all', des_num_iters='all'):
 	num_iters = len(x_cls)
 	cl_lens = []
 
-	# Get the longest trajectory over iterations of interest for all agents
+	# Get the longest trajectory over the last iteration
 	it_start = max(0, num_iters-des_num_iters)
 	orig_range = range(it_start, num_iters)
 	for j in orig_range:
@@ -36,7 +36,7 @@ def get_safe_set(x_cls, xf, agents, des_num_ts='all', des_num_iters='all'):
 		it_cl_lens = []
 		for agent_cl in iter_cls:
 			it_cl_lens.append(agent_cl.shape[1])
-			if agent_cl.shape[1] > num_ts:
+			if agent_cl.shape[1] > num_ts and j == orig_range[-1]:
 				num_ts = agent_cl.shape[1]
 		cl_lens.append(it_cl_lens)
 

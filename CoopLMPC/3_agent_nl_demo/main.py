@@ -29,7 +29,7 @@ from utils.lmpc_visualizer import lmpc_visualizer
 from utils.safe_set_utils import get_safe_set, inspect_safe_set
 import utils.utils
 
-def solve_init_traj(ftocp, x_0, model_agent, tol=-7):
+def solve_init_traj(ftocp, x_0, model_agent, visualizer=None, tol=-7):
 	n_x = ftocp.n_x
 	n_u = ftocp.n_u
 
@@ -61,6 +61,9 @@ def solve_init_traj(ftocp, x_0, model_agent, tol=-7):
 
 		ucl_feas.append(u_t)
 		xcl_feas.append(x_tp1)
+
+		if visualizer is not None:
+			visualizer.plot_traj(np.array(xcl_feas).T, np.array(ucl_feas).T, x_pred, u_pred, counter, shade=False)
 
 		# Close within tolerance
 		d = la.norm(x_tp1[:2] - waypts[waypt_idx][:2])
@@ -147,7 +150,6 @@ def main():
 		os.makedirs(log_dir)
 
 	# Flags
-	parallel = False # Parallelization flag
 	plot_init = False # Plot initial trajectory
 	pause_each_solve = False # Pause on each FTOCP solution
 
@@ -168,9 +170,12 @@ def main():
 
 	# Initial Conditions
 	x_0 = [np.nan*np.ones((n_x, 1)) for _ in range(n_a)]
-	x_0[0] = np.array([0.0, 5.0, np.pi, 0.0])
-	x_0[1] = np.array([-5.0, -5.0, 0.0, 0.0])
-	x_0[2] = np.array([5.0, -5.0, np.pi/2.0, 0.0])
+	# x_0[0] = np.array([0.0, 5.0, np.pi, 0.0])
+	# x_0[1] = np.array([-5.0, -5.0, 0.0, 0.0])
+	# x_0[2] = np.array([5.0, -5.0, np.pi/2.0, 0.0])
+	x_0[0] = np.array([0.0, 5.0, 3*np.pi/2, 0.0])
+	x_0[1] = np.array([-5.0, -5.0, np.pi/4, 0.0])
+	x_0[2] = np.array([5.0, -5.0, 3*np.pi/4, 0.0])
 
 	# Initialize dynamics and control agents (allows for dynamics to be simulated with higher resolution than control rate)
 	model_agents = [DT_Kin_Bike_Agent(l_r, l_f, w, model_dt, x_0[i]) for i in range(n_a)]
@@ -183,9 +188,15 @@ def main():
 		# ====================================================================================
 		# Goal conditions (these will be updated once the initial trajectories are found)
 		x_f = [np.nan*np.ones((n_x, 1)) for _ in range(n_a)]
-		x_f[0] = np.array([0.0, -5.0, 2*np.pi, 0.0])
-		x_f[1] = np.array([5.0, 5.0, np.pi/2, 0.0])
-		x_f[2] = np.array([-5.0, 5.0, np.pi, 0.0])
+		# x_f[0] = np.array([0.0, -5.0, 2*np.pi, 0.0])
+		# x_f[1] = np.array([5.0, 5.0, np.pi/2, 0.0])
+		# x_f[2] = np.array([-5.0, 5.0, np.pi, 0.0])
+		# x_f[0] = np.array([0.0, -5.0, 7*np.pi/4, 0.0])
+		# x_f[1] = np.array([5.0, 5.0, np.pi/4, 0.0])
+		# x_f[2] = np.array([-5.0, 5.0, 3*np.pi/4, 0.0])
+		x_f[0] = np.array([0.0, -5.0, 3*np.pi/2, 0.0])
+		x_f[1] = np.array([5.0, 5.0, np.pi/4, 0.0])
+		x_f[2] = np.array([-5.0, 5.0, 3*np.pi/4, 0.0])
 
 		# Check to make sure all agent dynamics, inital, and goal states have been defined
 		if np.any(np.isnan(x_0)) or np.any(np.isnan(x_f)):
@@ -193,12 +204,12 @@ def main():
 
 		# Intermediate waypoint to ensure collision-free trajectory
 		waypts = [[] for _ in range(n_a)]
-		# waypts[0] = [np.array([-5.0, 0.0, 3.0*np.pi/2.0, 1.0])]
-		# waypts[1] = [np.array([0.0, -5.0, 0.0, 1.0])]
-		# waypts[2] = [np.array([5.0, 0.0, np.pi/2, 1.0])]
-		waypts[0] = [np.array([-5.0, 0.0, 3.0*np.pi/2.0, 0.5])]
-		waypts[1] = [np.array([0.0, -5.0, 0.0, 0.5])]
-		waypts[2] = [np.array([5.0, 0.0, np.pi/2, 0.5])]
+		# waypts[0] = [np.array([-5.0, 0.0, 3.0*np.pi/2.0, 0.5])]
+		# waypts[1] = [np.array([0.0, -5.0, 0.0, 0.5])]
+		# waypts[2] = [np.array([5.0, 0.0, np.pi/2, 0.5])]
+		# waypts[0] = [np.array([-5.0, 0.0, 3.0*np.pi/2.0, 0.5])]
+		# waypts[1] = [np.array([0.0, -6.0, 0.0, 0.5])]
+		# waypts[2] = [np.array([4.0, 0.0, np.pi/2, 0.5])]
 		for i in range(n_a):
 			waypts[i].append(x_f[i])
 
@@ -217,29 +228,19 @@ def main():
 		N = 15
 		ltv_ftocps = [LTV_FTOCP(Q, P, R, Rd, N, mpc_control_agents[i], x_refs=waypts[i]) for i in range(n_a)]
 
+		mpc_vis = [lmpc_visualizer(pos_dims=[0,1], n_state_dims=n_x, n_act_dims=n_u, agent_id=i, n_agents=n_a, plot_lims=plot_lims) for i in range(n_a)]
+
 		if Q.shape[0] != Q.shape[1] or len(np.diag(Q)) != n_x:
 			raise(ValueError('Q matrix not shaped properly'))
 		if R.shape[0] != R.shape[1] or len(np.diag(R)) != n_u:
 			raise(ValueError('Q matrix not shaped properly'))
 
 		start = time.time()
-		if parallel:
-			# Create threads
-			pool = mp.Pool(processes=n_a)
-			# Assign thread to agent trajectory
-			results = [pool.apply_async(solve_init_traj, args=(ltv_ftocps[i], x_0[i], tol)) for i in range(n_a)]
-			# Sync point
-			init_trajs = [r.get() for r in results]
-
-			(xcl_feas, ucl_feas) = zip(*init_trajs)
-			xcl_feas = list(xcl_feas)
-			ucl_feas = list(ucl_feas)
-		else:
-			for i in range(n_a):
-				print('Solving for initial trajectory for agent %i' % (i+1))
-				x, u = solve_init_traj(ltv_ftocps[i], x_0[i], model_agents[i], tol=tol)
-				xcl_feas.append(x)
-				ucl_feas.append(u)
+		for i in range(n_a):
+			print('Solving for initial trajectory for agent %i' % (i+1))
+			x, u = solve_init_traj(ltv_ftocps[i], x_0[i], model_agents[i], visualizer=mpc_vis[i], tol=tol)
+			xcl_feas.append(x)
+			ucl_feas.append(u)
 		end = time.time()
 
 		for i in range(n_a):
@@ -253,6 +254,10 @@ def main():
 				print('Saving initial trajectory for agent %i' % (i+1))
 				np.savez('/'.join((FILE_DIR, 'init_traj_%i.npz' % i)), x=xcl_feas[i], u=ucl_feas[i])
 
+			mpc_vis[i].close_figure()
+
+		del ltv_ftocps, mpc_vis
+
 		print('Time elapsed: %g s' % (end - start))
 	else:
 		# Load initial trajectory from file
@@ -264,12 +269,26 @@ def main():
 			xcl_feas.append(init_traj['x'])
 			ucl_feas.append(init_traj['u'])
 
+	# Shift agent trajectories in time so that they occur sequentially
+	# (no collisions)
+	xcl_lens = [xcl_feas[i].shape[1] for i in range(n_a)]
+
+	for i in range(n_a):
+		before_len = 0
+		for j in range(i):
+			before_len += xcl_lens[j]
+
+		xcl_feas[i] = np.hstack((np.tile(x_0[i].reshape((-1,1)), before_len), xcl_feas[i]))
+		ucl_feas[i] = np.hstack((np.zeros((n_u, before_len)), ucl_feas[i]))
+
 	if plot_init:
 		plot_bike_agent_trajs(xcl_feas, ucl_feas, model_agents, model_dt, trail=True, plot_lims=plot_lims, it=0)
 
 	# Set goal state to be last state of initial trajectories
 	for i in range(n_a):
 		x_f[i] = xcl_feas[i][:,-1]
+
+	pdb.set_trace()
 
 	# ====================================================================================
 
@@ -286,9 +305,9 @@ def main():
 	xcls = [copy.copy(xcl_feas)]
 	ucls = [copy.copy(ucl_feas)]
 
-	ss_n_t = 30
+	ss_n_t = 175
 	# ss_n_t = 5
-	ss_n_j = 5
+	ss_n_j = 1
 
 	totalIterations = 30 # Number of iterations to perform
 	start_time = time.strftime("%Y-%m-%d_%H-%M-%S")

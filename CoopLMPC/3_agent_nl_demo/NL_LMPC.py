@@ -19,6 +19,7 @@ class NL_LMPC(object):
 		self.ftocp = ftocp
 		self.N = N
 		self.ftocp_N = self.N
+		self.ftocp_N_last = self.N
 
 		self.Qfun  = []
 		self.SS_t = []
@@ -67,6 +68,7 @@ class NL_LMPC(object):
 
 		# Reset horizon length
 		self.ftocp_N = self.N
+		self.ftocp_N_last = self.N
 
 		# Save best predictions and safe set indicies
 		if self.it > 0:
@@ -130,7 +132,8 @@ class NL_LMPC(object):
 				u_guess = self.u_preds_best[-1][0]
 			last_u = np.zeros(self.n_u)
 		else:
-			if self.ftocp_N == self.N:
+			# if self.ftocp_N == self.N:
+			if self.ftocp_N == self.ftocp_N_last:
 				# Get the safe set point chosen at the last time step,
 				# find its successor state and input and append to the prediction at the last time step
 				it_idx, ts_idx = self.idxs_best_it[-1]
@@ -206,6 +209,7 @@ class NL_LMPC(object):
 			pdb.set_trace()
 
 		if x_pred_best is not None and self.ftocp_N > 1:
+			self.ftocp_N_last = self.ftocp_N
 			if la.norm(x_pred_best[:,-1] - x_f) <= 10**tol:
 				print('Reaching goal state at end of horizon, decreasing horizon from %i to %i' % (self.ftocp_N, self.ftocp_N-1))
 				self.ftocp_N -= 1
@@ -216,7 +220,7 @@ class NL_LMPC(object):
 
 		self.last_cost = cost_best
 
-		return x_pred_best, u_pred_best, cost_best, SS, self.ftocp_N
+		return x_pred_best, u_pred_best, cost_best, SS, self.ftocp_N_last
 
 	def get_safe_set_q_func(self):
 		return (self.SS_t, self.uSS_t, self.Qfun_t)
