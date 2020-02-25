@@ -1,13 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="0445ff18-b0b0-4385-94b3-e53990fa2012" name="Default Changelist" comment="" />
+    <list default="true" id="0445ff18-b0b0-4385-94b3-e53990fa2012" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../CoopLMPC/3_agent_nl_demo/agents.py" beforeDir="false" afterPath="$PROJECT_DIR$/../CoopLMPC/3_agent_nl_demo/agents.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FTOCP.py" beforeDir="false" afterPath="$PROJECT_DIR$/FTOCP.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FTOCP_ADMM.py" beforeDir="false" afterPath="$PROJECT_DIR$/FTOCP_ADMM.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LMPC_ADMM.py" beforeDir="false" afterPath="$PROJECT_DIR$/LMPC_ADMM.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="FavoritesManager">
+    <favorites_list name="DistrLinearDLMPC" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
   <component name="ProjectId" id="1WuWv1dhzmGnZJppsMYCCIq2pZg" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showExcludedFiles" value="true" />
@@ -15,6 +30,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
   </component>
   <component name="RunManager" selected="Python.main">
     <configuration name="FTOCP_ADMM" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
@@ -188,8 +204,8 @@
       <screen x="67" y="27" width="1852" height="987" />
     </state>
     <state x="622" y="240" width="424" height="513" key="FileChooserDialogImpl/67.27.1852.987@67.27.1852.987" timestamp="1580947003000" />
-    <state width="897" height="213" key="GridCell.Tab.0.bottom" timestamp="1582343390781">
-      <screen x="67" y="27" width="1853" height="987" />
+    <state width="774" height="266" key="GridCell.Tab.0.bottom" timestamp="1582653091613">
+      <screen x="67" y="27" width="1853" height="1413" />
     </state>
     <state width="545" height="313" key="GridCell.Tab.0.bottom/67.27.1129.997@67.27.1129.997" timestamp="1580458543622" />
     <state width="700" height="293" key="GridCell.Tab.0.bottom/67.27.1145.1013@67.27.1145.1013" timestamp="1580114570389" />
@@ -207,11 +223,12 @@
     <state width="910" height="251" key="GridCell.Tab.0.bottom/67.27.1849.975@67.27.1849.975" timestamp="1580360895767" />
     <state width="754" height="202" key="GridCell.Tab.0.bottom/67.27.1850.938@67.27.1850.938" timestamp="1580867879464" />
     <state width="754" height="202" key="GridCell.Tab.0.bottom/67.27.1852.987@67.27.1852.987" timestamp="1580940973019" />
+    <state width="774" height="266" key="GridCell.Tab.0.bottom/67.27.1853.1413@67.27.1853.1413" timestamp="1582653091613" />
     <state width="928" height="253" key="GridCell.Tab.0.bottom/67.27.1853.939@67.27.1853.939" timestamp="1580787097340" />
     <state width="897" height="213" key="GridCell.Tab.0.bottom/67.27.1853.987@67.27.1853.987" timestamp="1582343390781" />
     <state width="898" height="386" key="GridCell.Tab.0.bottom/67.27.1859.1543@67.27.1859.1543" timestamp="1580975806401" />
-    <state width="897" height="213" key="GridCell.Tab.0.center" timestamp="1582343390780">
-      <screen x="67" y="27" width="1853" height="987" />
+    <state width="774" height="266" key="GridCell.Tab.0.center" timestamp="1582653091613">
+      <screen x="67" y="27" width="1853" height="1413" />
     </state>
     <state width="545" height="313" key="GridCell.Tab.0.center/67.27.1129.997@67.27.1129.997" timestamp="1580458543621" />
     <state width="700" height="293" key="GridCell.Tab.0.center/67.27.1145.1013@67.27.1145.1013" timestamp="1580114570389" />
@@ -229,11 +246,12 @@
     <state width="910" height="251" key="GridCell.Tab.0.center/67.27.1849.975@67.27.1849.975" timestamp="1580360895699" />
     <state width="754" height="202" key="GridCell.Tab.0.center/67.27.1850.938@67.27.1850.938" timestamp="1580867879463" />
     <state width="754" height="202" key="GridCell.Tab.0.center/67.27.1852.987@67.27.1852.987" timestamp="1580940972936" />
+    <state width="774" height="266" key="GridCell.Tab.0.center/67.27.1853.1413@67.27.1853.1413" timestamp="1582653091613" />
     <state width="928" height="253" key="GridCell.Tab.0.center/67.27.1853.939@67.27.1853.939" timestamp="1580787097241" />
     <state width="897" height="213" key="GridCell.Tab.0.center/67.27.1853.987@67.27.1853.987" timestamp="1582343390780" />
     <state width="898" height="386" key="GridCell.Tab.0.center/67.27.1859.1543@67.27.1859.1543" timestamp="1580975806326" />
-    <state width="897" height="213" key="GridCell.Tab.0.left" timestamp="1582343390776">
-      <screen x="67" y="27" width="1853" height="987" />
+    <state width="774" height="266" key="GridCell.Tab.0.left" timestamp="1582653091612">
+      <screen x="67" y="27" width="1853" height="1413" />
     </state>
     <state width="545" height="313" key="GridCell.Tab.0.left/67.27.1129.997@67.27.1129.997" timestamp="1580458543621" />
     <state width="700" height="293" key="GridCell.Tab.0.left/67.27.1145.1013@67.27.1145.1013" timestamp="1580114570388" />
@@ -251,11 +269,12 @@
     <state width="910" height="251" key="GridCell.Tab.0.left/67.27.1849.975@67.27.1849.975" timestamp="1580360895649" />
     <state width="754" height="202" key="GridCell.Tab.0.left/67.27.1850.938@67.27.1850.938" timestamp="1580867879463" />
     <state width="754" height="202" key="GridCell.Tab.0.left/67.27.1852.987@67.27.1852.987" timestamp="1580940972889" />
+    <state width="774" height="266" key="GridCell.Tab.0.left/67.27.1853.1413@67.27.1853.1413" timestamp="1582653091612" />
     <state width="928" height="253" key="GridCell.Tab.0.left/67.27.1853.939@67.27.1853.939" timestamp="1580787097172" />
     <state width="897" height="213" key="GridCell.Tab.0.left/67.27.1853.987@67.27.1853.987" timestamp="1582343390776" />
     <state width="898" height="386" key="GridCell.Tab.0.left/67.27.1859.1543@67.27.1859.1543" timestamp="1580975806291" />
-    <state width="897" height="213" key="GridCell.Tab.0.right" timestamp="1582343390781">
-      <screen x="67" y="27" width="1853" height="987" />
+    <state width="774" height="266" key="GridCell.Tab.0.right" timestamp="1582653091613">
+      <screen x="67" y="27" width="1853" height="1413" />
     </state>
     <state width="545" height="313" key="GridCell.Tab.0.right/67.27.1129.997@67.27.1129.997" timestamp="1580458543621" />
     <state width="700" height="293" key="GridCell.Tab.0.right/67.27.1145.1013@67.27.1145.1013" timestamp="1580114570389" />
@@ -273,11 +292,12 @@
     <state width="910" height="251" key="GridCell.Tab.0.right/67.27.1849.975@67.27.1849.975" timestamp="1580360895766" />
     <state width="754" height="202" key="GridCell.Tab.0.right/67.27.1850.938@67.27.1850.938" timestamp="1580867879464" />
     <state width="754" height="202" key="GridCell.Tab.0.right/67.27.1852.987@67.27.1852.987" timestamp="1580940972975" />
+    <state width="774" height="266" key="GridCell.Tab.0.right/67.27.1853.1413@67.27.1853.1413" timestamp="1582653091613" />
     <state width="928" height="253" key="GridCell.Tab.0.right/67.27.1853.939@67.27.1853.939" timestamp="1580787097298" />
     <state width="897" height="213" key="GridCell.Tab.0.right/67.27.1853.987@67.27.1853.987" timestamp="1582343390781" />
     <state width="898" height="386" key="GridCell.Tab.0.right/67.27.1859.1543@67.27.1859.1543" timestamp="1580975806364" />
-    <state width="898" height="386" key="GridCell.Tab.1.bottom" timestamp="1580975806589">
-      <screen x="67" y="27" width="1859" height="1543" />
+    <state width="774" height="266" key="GridCell.Tab.1.bottom" timestamp="1582653081344">
+      <screen x="67" y="27" width="1853" height="1413" />
     </state>
     <state width="545" height="313" key="GridCell.Tab.1.bottom/67.27.1129.997@67.27.1129.997" timestamp="1580458543625" />
     <state width="700" height="293" key="GridCell.Tab.1.bottom/67.27.1145.1013@67.27.1145.1013" timestamp="1580114570391" />
@@ -294,11 +314,12 @@
     <state width="910" height="311" key="GridCell.Tab.1.bottom/67.27.1849.975@67.27.1849.975" timestamp="1580360895565" />
     <state width="925" height="252" key="GridCell.Tab.1.bottom/67.27.1850.938@67.27.1850.938" timestamp="1580867154338" />
     <state width="921" height="252" key="GridCell.Tab.1.bottom/67.27.1852.987@67.27.1852.987" timestamp="1580940695964" />
+    <state width="774" height="266" key="GridCell.Tab.1.bottom/67.27.1853.1413@67.27.1853.1413" timestamp="1582653081344" />
     <state width="928" height="253" key="GridCell.Tab.1.bottom/67.27.1853.939@67.27.1853.939" timestamp="1580787097342" />
     <state width="930" height="265" key="GridCell.Tab.1.bottom/67.27.1853.987@67.27.1853.987" timestamp="1580522658661" />
     <state width="898" height="386" key="GridCell.Tab.1.bottom/67.27.1859.1543@67.27.1859.1543" timestamp="1580975806589" />
-    <state width="898" height="386" key="GridCell.Tab.1.center" timestamp="1580975806484">
-      <screen x="67" y="27" width="1859" height="1543" />
+    <state width="774" height="266" key="GridCell.Tab.1.center" timestamp="1582653081343">
+      <screen x="67" y="27" width="1853" height="1413" />
     </state>
     <state width="545" height="313" key="GridCell.Tab.1.center/67.27.1129.997@67.27.1129.997" timestamp="1580458543622" />
     <state width="700" height="293" key="GridCell.Tab.1.center/67.27.1145.1013@67.27.1145.1013" timestamp="1580114570390" />
@@ -315,11 +336,12 @@
     <state width="910" height="311" key="GridCell.Tab.1.center/67.27.1849.975@67.27.1849.975" timestamp="1580360895564" />
     <state width="925" height="252" key="GridCell.Tab.1.center/67.27.1850.938@67.27.1850.938" timestamp="1580867154338" />
     <state width="921" height="252" key="GridCell.Tab.1.center/67.27.1852.987@67.27.1852.987" timestamp="1580940695962" />
+    <state width="774" height="266" key="GridCell.Tab.1.center/67.27.1853.1413@67.27.1853.1413" timestamp="1582653081343" />
     <state width="928" height="253" key="GridCell.Tab.1.center/67.27.1853.939@67.27.1853.939" timestamp="1580787097341" />
     <state width="930" height="265" key="GridCell.Tab.1.center/67.27.1853.987@67.27.1853.987" timestamp="1580522658660" />
     <state width="898" height="386" key="GridCell.Tab.1.center/67.27.1859.1543@67.27.1859.1543" timestamp="1580975806484" />
-    <state width="898" height="386" key="GridCell.Tab.1.left" timestamp="1580975806438">
-      <screen x="67" y="27" width="1859" height="1543" />
+    <state width="774" height="266" key="GridCell.Tab.1.left" timestamp="1582653081343">
+      <screen x="67" y="27" width="1853" height="1413" />
     </state>
     <state width="545" height="313" key="GridCell.Tab.1.left/67.27.1129.997@67.27.1129.997" timestamp="1580458543622" />
     <state width="700" height="293" key="GridCell.Tab.1.left/67.27.1145.1013@67.27.1145.1013" timestamp="1580114570390" />
@@ -336,11 +358,12 @@
     <state width="910" height="311" key="GridCell.Tab.1.left/67.27.1849.975@67.27.1849.975" timestamp="1580360895564" />
     <state width="925" height="252" key="GridCell.Tab.1.left/67.27.1850.938@67.27.1850.938" timestamp="1580867154337" />
     <state width="921" height="252" key="GridCell.Tab.1.left/67.27.1852.987@67.27.1852.987" timestamp="1580940695961" />
+    <state width="774" height="266" key="GridCell.Tab.1.left/67.27.1853.1413@67.27.1853.1413" timestamp="1582653081343" />
     <state width="928" height="253" key="GridCell.Tab.1.left/67.27.1853.939@67.27.1853.939" timestamp="1580787097341" />
     <state width="930" height="265" key="GridCell.Tab.1.left/67.27.1853.987@67.27.1853.987" timestamp="1580522658659" />
     <state width="898" height="386" key="GridCell.Tab.1.left/67.27.1859.1543@67.27.1859.1543" timestamp="1580975806438" />
-    <state width="898" height="386" key="GridCell.Tab.1.right" timestamp="1580975806533">
-      <screen x="67" y="27" width="1859" height="1543" />
+    <state width="774" height="266" key="GridCell.Tab.1.right" timestamp="1582653081343">
+      <screen x="67" y="27" width="1853" height="1413" />
     </state>
     <state width="545" height="313" key="GridCell.Tab.1.right/67.27.1129.997@67.27.1129.997" timestamp="1580458543623" />
     <state width="700" height="293" key="GridCell.Tab.1.right/67.27.1145.1013@67.27.1145.1013" timestamp="1580114570390" />
@@ -357,6 +380,7 @@
     <state width="910" height="311" key="GridCell.Tab.1.right/67.27.1849.975@67.27.1849.975" timestamp="1580360895565" />
     <state width="925" height="252" key="GridCell.Tab.1.right/67.27.1850.938@67.27.1850.938" timestamp="1580867154338" />
     <state width="921" height="252" key="GridCell.Tab.1.right/67.27.1852.987@67.27.1852.987" timestamp="1580940695963" />
+    <state width="774" height="266" key="GridCell.Tab.1.right/67.27.1853.1413@67.27.1853.1413" timestamp="1582653081343" />
     <state width="928" height="253" key="GridCell.Tab.1.right/67.27.1853.939@67.27.1853.939" timestamp="1580787097341" />
     <state width="930" height="265" key="GridCell.Tab.1.right/67.27.1853.987@67.27.1853.987" timestamp="1580522658660" />
     <state width="898" height="386" key="GridCell.Tab.1.right/67.27.1859.1543@67.27.1859.1543" timestamp="1580975806533" />
@@ -391,26 +415,6 @@
           <option name="timeStamp" value="134" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/FTOCP_ADMM.py</url>
-          <line>226</line>
-          <option name="timeStamp" value="148" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/FTOCP_ADMM.py</url>
-          <line>243</line>
-          <option name="timeStamp" value="158" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/FTOCP_ADMM.py</url>
-          <line>178</line>
-          <option name="timeStamp" value="163" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/FTOCP_ADMM.py</url>
-          <line>182</line>
-          <option name="timeStamp" value="164" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/plot_ADMM_track.py</url>
           <line>13</line>
           <option name="timeStamp" value="165" />
@@ -426,24 +430,9 @@
           <option name="timeStamp" value="171" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/FTOCP_ADMM.py</url>
-          <line>134</line>
-          <option name="timeStamp" value="172" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/FTOCP_ADMM.py</url>
-          <line>169</line>
-          <option name="timeStamp" value="173" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/main.py</url>
           <line>265</line>
           <option name="timeStamp" value="174" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/FTOCP_ADMM.py</url>
-          <line>176</line>
-          <option name="timeStamp" value="176" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/LMPC_ADMM.py</url>
@@ -457,28 +446,48 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/LMPC_ADMM.py</url>
-          <line>95</line>
-          <option name="timeStamp" value="183" />
+          <line>171</line>
+          <option name="timeStamp" value="189" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/LMPC_ADMM.py</url>
-          <line>125</line>
-          <option name="timeStamp" value="184" />
+          <url>file://$PROJECT_DIR$/FTOCP_ADMM.py</url>
+          <line>53</line>
+          <option name="timeStamp" value="190" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/LMPC_ADMM.py</url>
-          <line>65</line>
-          <option name="timeStamp" value="185" />
+          <url>file://$PROJECT_DIR$/FTOCP_ADMM.py</url>
+          <line>132</line>
+          <option name="timeStamp" value="191" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/LMPC_ADMM.py</url>
-          <line>112</line>
-          <option name="timeStamp" value="186" />
+          <url>file://$PROJECT_DIR$/FTOCP_ADMM.py</url>
+          <line>171</line>
+          <option name="timeStamp" value="192" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/LMPC_ADMM.py</url>
-          <line>103</line>
-          <option name="timeStamp" value="188" />
+          <url>file://$PROJECT_DIR$/FTOCP_ADMM.py</url>
+          <line>184</line>
+          <option name="timeStamp" value="193" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/FTOCP_ADMM.py</url>
+          <line>218</line>
+          <option name="timeStamp" value="194" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/FTOCP_ADMM.py</url>
+          <line>290</line>
+          <option name="timeStamp" value="195" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/main.py</url>
+          <line>174</line>
+          <option name="timeStamp" value="196" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/main.py</url>
+          <line>147</line>
+          <option name="timeStamp" value="197" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

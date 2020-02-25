@@ -28,7 +28,7 @@ class FTOCP(object):
 		self.xPred = []
 		self.uPred = []
 
-	def solve(self, x0, verbose = False, SS = None, Qfun = None, CVX = None):
+	def solve(self, x0, verbose = True, SS = None, Qfun = None, CVX = None):
 		"""This methos solve a FTOCP given:
 			- x0: initial condition
 			- SS: (optional) contains a set of state and the terminal constraint is ConvHull(SS)
@@ -52,8 +52,8 @@ class FTOCP(object):
 			constr += [x[:,i+1] == self.A*x[:,i] + self.B*u[:,i],
 						u[:,i] >= -1.0,
 						u[:,i] <=  1.0,
-						x[:,i] >= -700.0,
-						x[:,i] <=  700.0,]
+						x[:,i] >= -100.0,
+						x[:,i] <=  100.0,]
 
 		# Terminal Constraint if SS not empty --> enforce the terminal constraint
 		if SS is not None:
@@ -74,15 +74,16 @@ class FTOCP(object):
 			cost += Qfun[0,:] * lambVar[:,0]  # It terminal cost is given by interpolation using \lambda
 		else:
 			#cost += norm(self.Q**0.5*x[:,self.N])**2 # If SS is not given terminal cost is quadratic
-			cost += quad_form(x[:, i], self.Q) + quad_form(u[:, i], self.R)
+			#cost += quad_form(x[:, i], self.Q) + quad_form(u[:, i], self.R)
+			cost += quad_form(x[:, self.N], self.Q) # + quad_form(u[:, self.N-1], self.R)
 
 
 		# Solve the Finite Time Optimal Control Problem
 		problem = Problem(Minimize(cost), constr)
 		if CVX == True:
-			problem.solve(verbose=verbose, solver=ECOS) # I find that ECOS is better please use it when solving QPs
+			problem.solve(verbose=verbose, solver=gurobi) # I find that ECOS is better please use it when solving QPs
 		else:
-			problem.solve(verbose=verbose)
+			problem.solve(verbose=verbose, solver=cvxpy.MOSEK)
 
 
 		# Store the open-loop predicted trajectory

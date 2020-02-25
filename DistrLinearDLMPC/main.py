@@ -18,20 +18,23 @@ def main():
     A11 = np.array([[1,1],[0,1]])
     A22 = np.array([[1, 1], [0, 1]])
     A33 = np.array([[1, 1], [0, 1]])
-    A12 = 0.3*np.array([[1, 0.33], [0, 1]])
+    #A12 = 0.3*np.array([[1, 0.33], [0, 1]])
+    A12 = np.array([[0.3, 0.1], [0, 0.3]])
     #A12 = A00
     #A12 = np.array([[0, 0], [0, 0]])
     A13 = A00
     A21 = A00
-    A23 = 0.3*np.array([[1, 0.33], [0, 1]])
-    A31 = 0.3*np.array([[1, 0.33], [0, 1]])
+    #A23 = 0.3*np.array([[1, 0.33], [0, 1]])
+    #A31 = 0.3*np.array([[1, 0.33], [0, 1]])
+    A23 = np.array([[0.3, 0.1], [0, 0.3]])
+    A31 = np.array([[0.3, 0.1], [0, 0.3]])
     #A31 = A00
     #A31 = np.array([[0, 0], [0, 0]])
     A32 = A00
 
-    AN1 = np.reshape(np.array([A11,A12]),(2,4))
-    AN2 = np.reshape(np.array([A22, A23]),(2,4))
-    AN3 = np.reshape(np.array([A33,A31]),(2,4))
+    AN1 = np.concatenate([A11,A12],axis=1) #np.reshape(np.array([A11,A12]),(2,4))
+    AN2 = np.concatenate([A22,A23],axis=1) #np.reshape(np.array([A22, A23]),(2,4))
+    AN3 = np.concatenate([A33,A31],axis=1) #np.reshape(np.array([A33,A31]),(2,4))
     ANi_list = [AN1,AN2,AN3]
 
 
@@ -63,15 +66,19 @@ def main():
     print("Computing first feasible trajectory")
 
     # Initial Condition
-    x10 = [-5.0, 0.0]
-    x20 = [-4.0, 0.0]
-    x30 = [-3.0, 0.0]
+    #x10 = [-5.0, 0.0]
+    #x20 = [-4.0, 0.0]
+    #x30 = [-3.0, 0.0]
+    x10 = [-10.0, 1.0]
+    x20 = [-9.0, 1.0]
+    x30 = [-8.0, 1.0]
     x0 = np.concatenate((x10,x20,x30))
     x0_list = np.array([x10,x20,x30])
 
     # Initialize FTOCP object
-    N_feas = 30
-    ftocp_for_mpc  = FTOCP(N_feas, A, B, 0.1*Q, R)
+    #N_feas = 30
+    N_feas = 15
+    ftocp_for_mpc  = FTOCP(N_feas, A, B, 0.01*Q, R)
 
     # ====================================================================================
     # Run simulation to compute feasible solution
@@ -199,7 +206,7 @@ def main():
     # pdb.set_trace()
 
     totalIterations = 10 # Number of iterations to perform
-    ADMM_iterations = 500
+    ADMM_iterations = 1000
     # ADMM_iterations = 10
 
     # run simulation
@@ -214,7 +221,6 @@ def main():
      #       syslist[m][m].xcl = np.asarray(x0_list[m])
       #      syslist[m][m].ucl = []
 
-        print("check here in line 227 whether xcl or xt needs to be initialized... also x0 is dim 2 and later first element is taken and then it is dim 1... ")
 
         time = 0
         n_count = 0
@@ -227,7 +233,7 @@ def main():
         # print(["Iteration", it, "xcl", syslist[0][0].xcl, "time", time])
 
         # time Loop (Perform the task until close to the origin)
-        while np.linalg.norm(syslist[m][m].xt) > 10 ** (-4):
+        while np.linalg.norm(syslist[m][m].xt) > 10 ** (-10):
 
             for m in range(M):
                 syslist[m][m].xt = syslist[m][m].xcl[time*syslist[m][m].n:(time+1)*syslist[m][m].n]

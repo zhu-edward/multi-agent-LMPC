@@ -79,13 +79,13 @@ class FTOCP_ADMM(object):
         # State Constraints
         constr = [xVar[0:syslist[m][m].n,0] == x0[0]]
         #for t in syslist[m][m].Ni_from:
-        #    constr += [xVar[syslist[m][m].n:syslist[m][m].n+syslist[t][t].n, 0] == syslist[t][t].xt[0:syslist[t][t].n]]
+        #    constr += [xVar[syslist[m][m].n:syslist[m][m].n+syslist[t][t].n, 0] == syslist[t][t].xt[0]]
         for i in range(0, N):
             constr += [xVar[0:syslist[m][m].n,i+1] == syslist[m][m].ANi*xVar[:,i] + syslist[m][m].Bi*uVar[:,i],
                         uVar[:,i] >= -1.0,
                         uVar[:,i] <=  1.0,
-                        xVar[:,i] >= -700.0,
-                        xVar[:,i] <=  700.0,]
+                        xVar[:,i] >= -100.0,
+                        xVar[:,i] <=  100.0,]
 
         # Terminal Constraint if SS not empty --> enforce the terminal constraint
         if SS is not None:
@@ -122,15 +122,16 @@ class FTOCP_ADMM(object):
 
 
         # ADMM cost terms
-        lambda_x = syslist[m][m].lambda_x
-        lambda_a = syslist[m][m].lambda_a
+        #lambda_x = syslist[m][m].lambda_x
+        #lambda_a = syslist[m][m].lambda_a
         # for t in syslist[m][m].Ni_from:
         #     lambda_x = np.append(lambda_x , syslist[m][t].lambda_x)
 
         # xVar_flat = vec(xVar)
         # cost += lambda_x * xVar.flatten()
         # cost += lambda_x * xVar_flat
-        cost += lambda_a * alphaVar
+        cost += syslist[m][m].lambda_a * alphaVar
+        cost += syslist[m][m].lambda_x * vec(xVar[0:syslist[m][m].n, :])
 
         nt_count = syslist[m][m].n
         for t in syslist[m][m].Ni_from:
@@ -147,7 +148,7 @@ class FTOCP_ADMM(object):
             cost += (rho) * norm( vec(xVar[0:syslist[m][m].n,:]) - (syslist[m][m].x_old.flatten(order='F') + syslist[t][m].x_old.flatten(order='F'))/2)**2
             # cost += lambda_x*(vec(xVar[0:syslist[m][m].n,:]) - (syslist[m][m].x_old.flatten(order='F') + syslist[t][m].x_old.flatten(order='F')))
 
-        cost += lambda_x*vec(xVar[0:syslist[m][m].n,:])
+
 
         # make one list out of Ni_from and Ni_to without redundant terms!
         for t in Ni_from_to:
@@ -159,12 +160,12 @@ class FTOCP_ADMM(object):
 # Solve the Finite Time Optimal Control Problem
         problem = Problem(Minimize(cost), constr)
         if CVX == True:
-            try:
-                problem.solve(verbose=False, solver=ECOS) # I find that ECOS is better please use it when solving QPs
-            except:
-                halt = 1
+            #try:
+            problem.solve(verbose=False, solver=cvxpy.MOSEK) # I find that ECOS is better please use it when solving QPs
+            #except:
+            #    halt = 1
         else:
-            problem.solve(verbose=True)
+            problem.solve(verbose=True, solver=cvxpy.MOSEK)
 
 
         # Store the open-loop predicted trajectory
@@ -195,6 +196,15 @@ class FTOCP_ADMM(object):
   #          syslist[m][m].xADMM1_track = [x]
   #          syslist[m][m].uADMM1_track = [u]
   #          syslist[m][m].aADMM1_track = [alpha]
+
+     #   print(['alpha N constraint:', np.dot(SS.T , alpha) - x[0:syslist[m][m].n, N]])
+    #    print(['alpha sum 1:', np.dot(np.ones((1, SS.shape[0])) , alpha)])
+        #print()
+
+    #SS.T * alphaVar[:] == xVar[0:syslist[m][m].n, N],  # Terminal state \in ConvHull(SS)
+    # constr += [np.dot(SS.T, alphaVar) == xVar[0:syslist[m][m].n, N],
+    #np.ones((1, SS.shape[0])) * alphaVar[:] == 1,  # Multiplies \lambda sum to 1
+    #alphaVar >= 0
 
         return syslist
 
