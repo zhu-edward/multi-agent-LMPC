@@ -88,7 +88,7 @@ class lmpc_visualizer(object):
 		self.fig.canvas.set_window_title('Agent %i' % (agent_id+1))
 		self.fig.canvas.draw()
 
-		self.prev_pos_cl = None
+		self.prev_pos_cls = None
 		self.prev_state_cl = None
 		self.prev_act_cl = None
 
@@ -114,6 +114,9 @@ class lmpc_visualizer(object):
 			if i == 0:
 				a.set_xlabel('$t$')
 
+	def close_figure(self):
+		plt.close(self.fig)
+		
 	def update_prev_trajs(self, state_traj, act_traj=None):
 		# state_traj is a list of numpy arrays. Each numpy array is the closed-loop trajectory of an agent.
 		if state_traj is not None:
@@ -126,9 +129,7 @@ class lmpc_visualizer(object):
 
 		self.it += 1
 
-	def plot_traj(self, state_cl, act_cl, state_preds, act_preds, t, SS, expl_con=None, shade=False):
-		# self.clear_plots()
-
+	def plot_traj(self, state_cl, act_cl, state_preds, act_preds, t, SS=None, expl_con=None, shade=False):
 		if shade:
 			p1 = np.linspace(self.plot_lims[0][0], self.plot_lims[0][1], 15)
 			p2 = np.linspace(self.plot_lims[1][0], self.plot_lims[1][1], 15)
@@ -177,7 +178,8 @@ class lmpc_visualizer(object):
 									self.pos_ax.plot(test_pt[0], test_pt[1], '.', c=c_pred[i-t], markersize=1)
 
 		# Plot the closed loop position trajectory up to this iteration and the optimal solution at this iteration
-		self.ss_line.set_data(SS[0,:], SS[1,:])
+		if SS is not None:
+			self.ss_line.set_data(SS[0,:], SS[1,:])
 		for i in range(pred_len):
 			self.pred_xy[i].set_data(pos_preds[0,i], pos_preds[1,i])
 			self.pred_xy[i].set_color(c_pred[i])
@@ -200,7 +202,8 @@ class lmpc_visualizer(object):
 					l = self.prev_state_cl[self.agent_id].shape[1]
 					self.prev_traj_ts[i].set_data(range(l), self.prev_state_cl[self.agent_id][plot_idx,:])
 					a.set_xlim([0, l+1])
-				self.ss_ts[i].set_data(range(t+pred_len, t+pred_len+SS.shape[1]), SS[plot_idx,:])
+				if SS is not None:
+					self.ss_ts[i].set_data(range(t+pred_len, t+pred_len+SS.shape[1]), SS[plot_idx,:])
 				self.pred_ts[i].set_data(range(t, t+pred_len), state_preds[plot_idx,:])
 				self.curr_traj_ts[i].set_data(range(cl_len-1), state_cl[plot_idx,:-1])
 				a.relim()

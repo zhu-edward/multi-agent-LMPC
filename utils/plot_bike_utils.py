@@ -87,50 +87,51 @@ def plot_bike_agent_trajs(x, u, agents, dt, trail=False, shade=False, plot_lims=
 				text_lines = []
 
 		for i in range(n_a):
-			psi_lines[i].set_data(dt*np.arange(min(t+1, traj_lens[i]-1)), x[i][2,:min(t+1, traj_lens[i]-1)])
-			v_lines[i].set_data(dt*np.arange(min(t+1, traj_lens[i]-1)), x[i][3,:min(t+1, traj_lens[i]-1)])
-			df_lines[i].set_data(dt*np.arange(min(t+1, traj_lens[i]-1)), u[i][0,:min(t+1, traj_lens[i]-1)])
-			a_lines[i].set_data(dt*np.arange(min(t+1, traj_lens[i]-1)), u[i][1,:min(t+1, traj_lens[i]-1)])
+			if not end_flags[i]:
+				psi_lines[i].set_data(dt*np.arange(min(t+1, traj_lens[i]-1)), x[i][2,:min(t+1, traj_lens[i]-1)])
+				v_lines[i].set_data(dt*np.arange(min(t+1, traj_lens[i]-1)), x[i][3,:min(t+1, traj_lens[i]-1)])
+				df_lines[i].set_data(dt*np.arange(min(t+1, traj_lens[i]-1)), u[i][0,:min(t+1, traj_lens[i]-1)])
+				a_lines[i].set_data(dt*np.arange(min(t+1, traj_lens[i]-1)), u[i][1,:min(t+1, traj_lens[i]-1)])
 
-			x_t = x[i][:,min(t, traj_lens[i]-1)]
-			u_t = u[i][:,min(t, traj_lens[i]-1)]
-			l_f = agents[i].l_f
-			l_r = agents[i].l_r
-			w = agents[i].w
+				x_t = x[i][:,min(t, traj_lens[i]-1)]
+				u_t = u[i][:,min(t, traj_lens[i]-1)]
+				l_f = agents[i].l_f
+				l_r = agents[i].l_r
+				w = agents[i].w
 
-			car_x = [x_t[0] + l_f*np.cos(x_t[2]) + w*np.sin(x_t[2])/2,
-				x_t[0] + l_f*np.cos(x_t[2]) - w*np.sin(x_t[2])/2,
-				x_t[0] - l_r*np.cos(x_t[2]) - w*np.sin(x_t[2])/2,
-				x_t[0] - l_r*np.cos(x_t[2]) + w*np.sin(x_t[2])/2,
-				x_t[0] + l_f*np.cos(x_t[2]) + w*np.sin(x_t[2])/2]
-			car_y = [x_t[1] + l_f*np.sin(x_t[2]) - w*np.cos(x_t[2])/2,
-				x_t[1] + l_f*np.sin(x_t[2]) + w*np.cos(x_t[2])/2,
-				x_t[1] - l_r*np.sin(x_t[2]) + w*np.cos(x_t[2])/2,
-				x_t[1] - l_r*np.sin(x_t[2]) - w*np.cos(x_t[2])/2,
-				x_t[1] + l_f*np.sin(x_t[2]) - w*np.cos(x_t[2])/2]
+				car_x = [x_t[0] + l_f*np.cos(x_t[2]) + w*np.sin(x_t[2])/2,
+					x_t[0] + l_f*np.cos(x_t[2]) - w*np.sin(x_t[2])/2,
+					x_t[0] - l_r*np.cos(x_t[2]) - w*np.sin(x_t[2])/2,
+					x_t[0] - l_r*np.cos(x_t[2]) + w*np.sin(x_t[2])/2,
+					x_t[0] + l_f*np.cos(x_t[2]) + w*np.sin(x_t[2])/2]
+				car_y = [x_t[1] + l_f*np.sin(x_t[2]) - w*np.cos(x_t[2])/2,
+					x_t[1] + l_f*np.sin(x_t[2]) + w*np.cos(x_t[2])/2,
+					x_t[1] - l_r*np.sin(x_t[2]) + w*np.cos(x_t[2])/2,
+					x_t[1] - l_r*np.sin(x_t[2]) - w*np.cos(x_t[2])/2,
+					x_t[1] + l_f*np.sin(x_t[2]) - w*np.cos(x_t[2])/2]
 
-			wheel_x = [x_t[0] + l_f*np.cos(x_t[2]) + 0.2*np.cos(x_t[2]+u_t[0]), x_t[0] + l_f*np.cos(x_t[2]) - 0.2*np.cos(x_t[2]+u_t[0])]
-			wheel_y = [x_t[1] + l_f*np.sin(x_t[2]) + 0.2*np.sin(x_t[2]+u_t[0]), x_t[1] + l_f*np.sin(x_t[2]) - 0.2*np.sin(x_t[2]+u_t[0])]
+				wheel_x = [x_t[0] + l_f*np.cos(x_t[2]) + 0.2*np.cos(x_t[2]+u_t[0]), x_t[0] + l_f*np.cos(x_t[2]) - 0.2*np.cos(x_t[2]+u_t[0])]
+				wheel_y = [x_t[1] + l_f*np.sin(x_t[2]) + 0.2*np.sin(x_t[2]+u_t[0]), x_t[1] + l_f*np.sin(x_t[2]) - 0.2*np.sin(x_t[2]+u_t[0])]
 
-			bound_x = x_t[0]+r_a[i]*np.cos(np.linspace(0,2*np.pi,100))
-			bound_y = x_t[1]+r_a[i]*np.sin(np.linspace(0,2*np.pi,100))
+				bound_x = x_t[0]+r_a[i]*np.cos(np.linspace(0,2*np.pi,100))
+				bound_y = x_t[1]+r_a[i]*np.sin(np.linspace(0,2*np.pi,100))
 
-			if not trail:
-				xy_lines[i].set_data(x_t[0], x_t[1])
-			else:
-				xy_lines[i].set_data(x[i][0,:min(t+1, traj_lens[i]-1)], x[i][1,:min(t+1, traj_lens[i]-1)])
+				if not trail:
+					xy_lines[i].set_data(x_t[0], x_t[1])
+				else:
+					xy_lines[i].set_data(x[i][0,:min(t+1, traj_lens[i]-1)], x[i][1,:min(t+1, traj_lens[i]-1)])
 
-			car_lines[i].set_data(car_x, car_y)
-			wheel_lines[i].set_data(wheel_x, wheel_y)
-			bound_lines[i].set_data(bound_x, bound_y)
+				car_lines[i].set_data(car_x, car_y)
+				wheel_lines[i].set_data(wheel_x, wheel_y)
+				bound_lines[i].set_data(bound_x, bound_y)
+
+				if t >= traj_lens[i]-1:
+					end_flags[i] = True
 
 			text_lines.append(ax.text(x_t[0]+r_a[i]+0.5,
 				x_t[1]+r_a[i]+0.5, str(i+1), fontsize=6,
 				bbox=dict(facecolor='white', alpha=1.)))
-
-			if not end_flags[i] and t >= traj_lens[i]-1:
-				end_flags[i] = True
-
+				
 			psi_ax.relim()
 			psi_ax.autoscale_view()
 			v_ax.relim()
