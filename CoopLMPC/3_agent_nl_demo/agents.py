@@ -50,7 +50,7 @@ class CT_Kin_Bike_Agent(CT_Kin_Bike_Model):
 
 
 class DT_Kin_Bike_Agent(DT_Kin_Bike_Model):
-	def __init__(self, l_r, l_f, w, dt, x_0,
+	def __init__(self, l_r, l_f, w, dt, col_buf=None,
 		a_lim=[-3.0, 3.0], df_lim=[-0.5, 0.5], x_lim=[-10.0, 10.0],
 		y_lim=[-10.0, 10.0], psi_lim=None, v_lim=[-10.0, 10.0],
 		da_lim=[-7.0, 7.0], ddf_lim=[-0.7, 0.7]):
@@ -58,12 +58,12 @@ class DT_Kin_Bike_Agent(DT_Kin_Bike_Model):
 
 		self.w = w
 		self.l = l_r + l_f
-		self.r = np.sqrt((self.w/2.0)**2 + (self.l/2.0)**2)
+		if col_buf is None:
+			self.col_buf = 0
+		else:
+			self.col_buf = col_buf
+		self.r = np.sqrt((self.w/2.0)**2 + (self.l/2.0)**2) + self.col_buf
 		self.dt = dt
-		self.x_0 = x_0
-
-		self.state_his = [x_0]
-		self.input_his = []
 
 		self.a_lim = a_lim
 		self.df_lim = df_lim

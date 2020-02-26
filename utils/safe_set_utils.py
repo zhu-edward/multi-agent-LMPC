@@ -95,7 +95,8 @@ def get_safe_set(x_cls, xf, agents, des_num_ts='all', des_num_iters='all'):
 				# 	pdb.set_trace()
 
 				# Use SVM with linear kernel and no regularization (w'x + b <= -a_0 for agent p[0], w'x + b >= a_1 for agent p[1])
-				clf = svm.SVC(kernel='linear', C=1000)
+				# clf = svm.SVC(kernel='linear', C=1000)
+				clf = svm.SVC(kernel='linear', C=1000, max_iter=1000)
 				clf.fit(X, y)
 				w = np.squeeze(clf.coef_)
 				b = np.squeeze(clf.intercept_)

@@ -282,7 +282,7 @@ class NL_FTOCP(object):
         sol = opti.solve()
 
         slack_val = sol.value(slack)
-        if la.norm(slack_val) > 1e-8:
+        if la.norm(slack_val) > 2e-8:
             print('Warning! Solved, but with slack norm of %g is greater than 1e-8!' % la.norm(slack_val))
 
         if sol.stats()['success'] and la.norm(slack_val) <= 1e-8:

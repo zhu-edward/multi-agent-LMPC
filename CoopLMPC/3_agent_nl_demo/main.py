@@ -168,19 +168,24 @@ def main():
 	l_f = 0.5
 	w = 0.5
 
+	col_buf = [0.2, 0.2, 0.2]
+
 	# Initial Conditions
 	x_0 = [np.nan*np.ones((n_x, 1)) for _ in range(n_a)]
+	# Example 1, 2
 	# x_0[0] = np.array([0.0, 5.0, np.pi, 0.0])
 	# x_0[1] = np.array([-5.0, -5.0, 0.0, 0.0])
 	# x_0[2] = np.array([5.0, -5.0, np.pi/2.0, 0.0])
+
+	# Agent intersection
 	x_0[0] = np.array([0.0, 5.0, 3*np.pi/2, 0.0])
 	x_0[1] = np.array([-5.0, -5.0, np.pi/4, 0.0])
 	x_0[2] = np.array([5.0, -5.0, 3*np.pi/4, 0.0])
 
 	# Initialize dynamics and control agents (allows for dynamics to be simulated with higher resolution than control rate)
-	model_agents = [DT_Kin_Bike_Agent(l_r, l_f, w, model_dt, x_0[i]) for i in range(n_a)]
-	mpc_control_agents = [DT_Kin_Bike_Agent(l_r, l_f, w, control_dt, x_0[i], a_lim=[-1.0, 1.0], df_lim=[-0.5, 0.5], da_lim=[-1.5, 1.5], ddf_lim=[-0.3, 0.3]) for i in range(n_a)]
-	lmpc_control_agents = [DT_Kin_Bike_Agent(l_r, l_f, w, control_dt, x_0[i]) for i in range(n_a)]
+	model_agents = [DT_Kin_Bike_Agent(l_r, l_f, w, model_dt, col_buf=col_buf[i]) for i in range(n_a)]
+	mpc_control_agents = [DT_Kin_Bike_Agent(l_r, l_f, w, control_dt, col_buf=col_buf[i], a_lim=[-1.0, 1.0], df_lim=[-0.5, 0.5], da_lim=[-1.5, 1.5], ddf_lim=[-0.3, 0.3]) for i in range(n_a)]
+	lmpc_control_agents = [DT_Kin_Bike_Agent(l_r, l_f, w, control_dt, col_buf=col_buf[i]) for i in range(n_a)]
 
 	if not args.init_traj:
 		# ====================================================================================
@@ -188,12 +193,18 @@ def main():
 		# ====================================================================================
 		# Goal conditions (these will be updated once the initial trajectories are found)
 		x_f = [np.nan*np.ones((n_x, 1)) for _ in range(n_a)]
+
+		# Example 1
 		# x_f[0] = np.array([0.0, -5.0, 2*np.pi, 0.0])
 		# x_f[1] = np.array([5.0, 5.0, np.pi/2, 0.0])
 		# x_f[2] = np.array([-5.0, 5.0, np.pi, 0.0])
+
+		# Example 2
 		# x_f[0] = np.array([0.0, -5.0, 7*np.pi/4, 0.0])
 		# x_f[1] = np.array([5.0, 5.0, np.pi/4, 0.0])
 		# x_f[2] = np.array([-5.0, 5.0, 3*np.pi/4, 0.0])
+
+		# Agent intersection
 		x_f[0] = np.array([0.0, -5.0, 3*np.pi/2, 0.0])
 		x_f[1] = np.array([5.0, 5.0, np.pi/4, 0.0])
 		x_f[2] = np.array([-5.0, 5.0, 3*np.pi/4, 0.0])
@@ -204,9 +215,12 @@ def main():
 
 		# Intermediate waypoint to ensure collision-free trajectory
 		waypts = [[] for _ in range(n_a)]
+		# Example 1
 		# waypts[0] = [np.array([-5.0, 0.0, 3.0*np.pi/2.0, 0.5])]
 		# waypts[1] = [np.array([0.0, -5.0, 0.0, 0.5])]
 		# waypts[2] = [np.array([5.0, 0.0, np.pi/2, 0.5])]
+
+		# Example 2
 		# waypts[0] = [np.array([-5.0, 0.0, 3.0*np.pi/2.0, 0.5])]
 		# waypts[1] = [np.array([0.0, -6.0, 0.0, 0.5])]
 		# waypts[2] = [np.array([4.0, 0.0, np.pi/2, 0.5])]
@@ -273,13 +287,19 @@ def main():
 	# (no collisions)
 	xcl_lens = [xcl_feas[i].shape[1] for i in range(n_a)]
 
-	for i in range(n_a):
-		before_len = 0
-		for j in range(i):
-			before_len += xcl_lens[j]
+	# for i in range(n_a):
+	# 	before_len = 0
+	# 	for j in range(i):
+	# 		before_len += xcl_lens[j]
+	#
+	# 	xcl_feas[i] = np.hstack((np.tile(x_0[i].reshape((-1,1)), before_len), xcl_feas[i]))
+	# 	ucl_feas[i] = np.hstack((np.zeros((n_u, before_len)), ucl_feas[i]))
 
-		xcl_feas[i] = np.hstack((np.tile(x_0[i].reshape((-1,1)), before_len), xcl_feas[i]))
-		ucl_feas[i] = np.hstack((np.zeros((n_u, before_len)), ucl_feas[i]))
+	for i in range(n_a):
+		before_len = 50
+
+		xcl_feas[i] = np.hstack((np.tile(x_0[i].reshape((-1,1)), before_len*i), xcl_feas[i]))
+		ucl_feas[i] = np.hstack((np.zeros((n_u, before_len*i)), ucl_feas[i]))
 
 	if plot_init:
 		plot_bike_agent_trajs(xcl_feas, ucl_feas, model_agents, model_dt, trail=True, plot_lims=plot_lims, it=0)
