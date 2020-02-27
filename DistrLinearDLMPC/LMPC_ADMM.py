@@ -164,21 +164,27 @@ class LMPC_ADMM(object):
 				# 	print(["Agent:", m, "neighbor:", t, "xt:", syslist[m][t].x])
 
 			for m in range(M):
+				for t in syslist[m][m].Ni_from:
+					xmt = la.norm(syslist[m][t].xPred.flatten(order='F') - syslist[t][t].xPred.flatten(order='F'))
+					#umt = la.norm(syslist[m][t].uPred.flatten(order='F') - syslist[t][t].uPred.flatten(order='F'))
+					alphamt = la.norm(syslist[m][m].aPred.flatten(order='F') - syslist[t][t].aPred.flatten(order='F'))
+
+					syslist[m][t].xADMM1_track = np.append(syslist[m][t].xADMM1_track, xmt)
+				#	syslist[m][t].uADMM1_track = np.append(syslist[m][t].uPred_track, umt)
+					syslist[m][t].aADMM1_track = np.append(syslist[m][t].aADMM1_track, alphamt)
+
+			for m in range(M):
 				syslist = ftocp_ADMM_list[m].update_ADMM1(syslist, m)
 
-			#diff_1 = la.norm(syslist[0][0].x_old.flatten(order='F') - syslist[2][0].x_old.flatten(order='F'))
-			#diff_2 = la.norm(syslist[1][1].x_old.flatten(order='F') - syslist[0][1].x_old.flatten(order='F'))
-			#diff_3 = la.norm(syslist[2][2].x_old.flatten(order='F') - syslist[1][2].x_old.flatten(order='F'))
-			diff_1 = la.norm(syslist[0][0].x.flatten(order='F') - syslist[2][0].x.flatten(order='F'))
-			diff_2 = la.norm(syslist[1][1].x.flatten(order='F') - syslist[0][1].x.flatten(order='F'))
-			diff_3 = la.norm(syslist[2][2].x.flatten(order='F') - syslist[1][2].x.flatten(order='F'))
-			print('ADMM iteration: %i, diff 1: %g, diff 2: %g, diff 3: %g' % (ti, diff_1, diff_2, diff_3))
+			#diff_1 = la.norm(syslist[0][0].x.flatten(order='F') - syslist[2][0].x.flatten(order='F'))
+			#diff_2 = la.norm(syslist[1][1].x.flatten(order='F') - syslist[0][1].x.flatten(order='F'))
+			#diff_3 = la.norm(syslist[2][2].x.flatten(order='F') - syslist[1][2].x.flatten(order='F'))
+			#print('ADMM iteration: %i, diff 1: %g, diff 2: %g, diff 3: %g' % (ti, diff_1, diff_2, diff_3))
 
 			diff_states = syslist[2][2].x.flatten(order='F') - syslist[1][2].x.flatten(order='F')
 			print('ADMM iteration: %i, diff states: %g, diff 2: %g, diff 3: %g, diff 4: %g' % (ti, diff_states[0], diff_states[1], diff_states[2], diff_states[3]))
 
-
-			diff_a1 = la.norm(syslist[0][0].a - syslist[1][1].a)
-			diff_a2 = la.norm(syslist[1][1].a - syslist[2][2].a)
-			diff_a3 = la.norm(syslist[2][2].a - syslist[0][0].a)
-			print('ADMM iteration: %i, diff a: %g, diff 2: %g, diff 3: %g' % (ti, diff_a1, diff_a2, diff_a3))
+			#diff_a1 = la.norm(syslist[0][0].a - syslist[1][1].a)
+			#diff_a2 = la.norm(syslist[1][1].a - syslist[2][2].a)
+			#diff_a3 = la.norm(syslist[2][2].a - syslist[0][0].a)
+			#print('ADMM iteration: %i, diff a: %g, diff 2: %g, diff 3: %g' % (ti, diff_a1, diff_a2, diff_a3))

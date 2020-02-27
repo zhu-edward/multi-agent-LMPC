@@ -2,6 +2,7 @@ import numpy as np
 import pdb
 import scipy
 from cvxpy import *
+from numpy import linalg as la
 import pickle
 
 class FTOCP_ADMM(object):
@@ -51,7 +52,7 @@ class FTOCP_ADMM(object):
             - SS: (optional) contains a set of state and the terminal constraint is ConvHull(SS)
             - Qfun: (optional) cost associtated with the state stored in SS. Terminal cost is BarycentrcInterpolation(SS, Qfun)
         """
-        x0 = syslist[m][m].xt[0:syslist[m][m].n]
+        x0 = syslist[m][m].xt #[0:syslist[m][m].n]
 
         # Initialize Variables
         Ni_from_to = np.union1d(syslist[m][m].Ni_from, syslist[m][m].Ni_to)
@@ -77,9 +78,9 @@ class FTOCP_ADMM(object):
         Qfun = syslist[m][m].Qfun
 
         # State Constraints
-        constr = [xVar[0:syslist[m][m].n,0] == x0[0]]
-        #for t in syslist[m][m].Ni_from:
-        #    constr += [xVar[syslist[m][m].n:syslist[m][m].n+syslist[t][t].n, 0] == syslist[t][t].xt[0]]
+        constr = [xVar[0:syslist[m][m].n,0] == x0]
+        for t in syslist[m][m].Ni_from:
+            constr += [xVar[syslist[m][m].n:syslist[m][m].n+syslist[t][t].n, 0] == syslist[t][t].xt]
         for i in range(0, N):
             constr += [xVar[0:syslist[m][m].n,i+1] == syslist[m][m].ANi*xVar[:,i] + syslist[m][m].Bi*uVar[:,i],
                         uVar[:,i] >= -1.0,
@@ -136,7 +137,7 @@ class FTOCP_ADMM(object):
         nt_count = syslist[m][m].n
         for t in syslist[m][m].Ni_from:
             # cost += (rho) * norm( xVar[nt_count:nt_count+syslist[t][t].n,:].flatten() - (syslist[m][t].x_old.flatten() + syslist[t][t].x_old.flatten())/2)**2
-            cost += (rho) * norm(vec(xVar[nt_count:nt_count+syslist[t][t].n,:]) - (syslist[m][t].x_old.flatten(order='F') + syslist[t][t].x_old.flatten(order='F'))/2)**2
+            cost += rho * norm(vec(xVar[nt_count:nt_count+syslist[t][t].n,:]) - (syslist[m][t].x_old.flatten(order='F') + syslist[t][t].x_old.flatten(order='F'))/2)**2
             # cost += syslist[m][t].lambda_x*(vec(xVar[nt_count:nt_count+syslist[t][t].n,:]) - (syslist[m][t].x_old.flatten(order='F') + syslist[t][t].x_old.flatten(order='F')))
             cost += syslist[m][t].lambda_x*vec(xVar[nt_count:nt_count+syslist[t][t].n,:])
         #    for k in syslist[t][t].Ni_to:
@@ -145,14 +146,14 @@ class FTOCP_ADMM(object):
 
         for t in syslist[m][m].Ni_to:
             # cost += (rho) * norm( xVar[0:syslist[m][m].n,:].flatten() - (syslist[m][m].x_old.flatten() + syslist[t][m].x_old.flatten())/2)**2
-            cost += (rho) * norm( vec(xVar[0:syslist[m][m].n,:]) - (syslist[m][m].x_old.flatten(order='F') + syslist[t][m].x_old.flatten(order='F'))/2)**2
+            cost += rho * norm( vec(xVar[0:syslist[m][m].n,:]) - (syslist[m][m].x_old.flatten(order='F') + syslist[t][m].x_old.flatten(order='F'))/2)**2
             # cost += lambda_x*(vec(xVar[0:syslist[m][m].n,:]) - (syslist[m][m].x_old.flatten(order='F') + syslist[t][m].x_old.flatten(order='F')))
 
 
 
         # make one list out of Ni_from and Ni_to without redundant terms!
         for t in Ni_from_to:
-            cost += (rho) * norm(alphaVar - (syslist[m][m].a_old + syslist[t][t].a_old)/2)**2
+            cost += rho * norm(alphaVar - (syslist[m][m].a_old + syslist[t][t].a_old)/2)**2
 
 
 
@@ -188,14 +189,19 @@ class FTOCP_ADMM(object):
             syslist[m][t].xPred = x[nx_count:nx_count+syslist[t][t].n, :]
             nx_count += syslist[t][t].n
 
-  #      try:
-  #          syslist[m][m].xADMM1_track = [syslist[m][m].xADMM1_track, x]
-  #          syslist[m][m].uADMM1_track = [syslist[m][m].uADMM1_track, u]
-  #          syslist[m][m].aADMM1_track = [syslist[m][m].aADMM1_track, alpha]
-  #      except:
-  #          syslist[m][m].xADMM1_track = [x]
-  #          syslist[m][m].uADMM1_track = [u]
-  #          syslist[m][m].aADMM1_track = [alpha]
+  #          xmt = la.norm(syslist[m][t].x.flatten(order='F') - syslist[t][t].x.flatten(order='F'))
+  #          umt = la.norm(syslist[m][t].u.flatten(order='F') - syslist[t][t].x.flatten(order='F'))
+  #          alphamt = la.norm(syslist[m][t].alpha.flatten(order='F') - syslist[t][t].alpha.flatten(order='F'))
+
+  #          syslist[m][t].xADMM1_track = np.append(syslist[m][t].xADMM1_track, xmt)
+  #          syslist[m][t].uADMM1_track = np.append(syslist[m][t].uADMM1_track, umt)
+  #          syslist[m][t].aADMM1_track = np.append(syslist[m][t].aADMM1_track, alphamt)
+
+
+        syslist[m][m].xADMM1_track = np.append(syslist[m][m].xADMM1_track, x)
+        syslist[m][m].uADMM1_track = np.append(syslist[m][m].uADMM1_track, u)
+        syslist[m][m].aADMM1_track = np.append(syslist[m][m].aADMM1_track, alpha)
+
 
      #   print(['alpha N constraint:', np.dot(SS.T , alpha) - x[0:syslist[m][m].n, N]])
     #    print(['alpha sum 1:', np.dot(np.ones((1, SS.shape[0])) , alpha)])
@@ -215,7 +221,6 @@ class FTOCP_ADMM(object):
         # THIS NEEDS TO BE DONE IN A SECOND STEP ONLY ONCE ALL THE SUBSYSTEMS SOLVED THEIR ADMM 1 SUBPROBLEMS
         # HOW TO STORE THE x AND u VALUES FIRST??
 
-
         syslist[m][m].x_old = syslist[m][m].x
         syslist[m][m].x = syslist[m][m].xPred
 
@@ -225,55 +230,6 @@ class FTOCP_ADMM(object):
         for t in syslist[m][m].Ni_from:
             syslist[m][t].x_old = syslist[m][t].x
             syslist[m][t].x = syslist[m][t].xPred
-
-
-
-        """
-        x = syslist[m][m].xADMM1
-        u = syslist[m][m].uADMM1
-
-        syslist[m][m].x_old = syslist[m][m].x
-        syslist[m][m].u = u
-
-        try:
-            syslist[m][m].x = x[0:syslist[m][m].n,:]
-        except:
-            halt = 1
-
-        nt_count = syslist[m][m].n
-        for t in syslist[m][m].Ni_from:
-            syslist[m][t].x_old = syslist[m][t].x
-            try:
-                syslist[m][t].x = x[nt_count:nt_count + syslist[t][t].n,:]
-            except:
-                halt = 1
-                # Save the lmpc object
-                filename = 'ADMM_track_syslist.pkl'
-                filehandler = open(filename, 'wb')
-                pickle.dump(syslist, filehandler)
-
-            nt_count: nt_count + syslist[t][t].n
-
-        #if SS is not None:
-        alpha = syslist[m][m].aADMM1
-        syslist[m][m].a_old = syslist[m][m].a
-        syslist[m][m].a = alpha
-
-    #    print(alpha.sum()    )
-    #    print(x[0:syslist[m][m].n,0] == x0[:])
-    #    print(["Error in final state:", np.dot(SS.T, alpha) - x[0:syslist[m][m].n,N]])
-    #    print(["Final state:", np.dot(SS.T, alpha)])
-    #    print(["Error in initial value:", x[0:syslist[m][m].n,0] - x0[:]])
-
-    #    if np.linalg.norm(np.subtract(x[0:syslist[m][m].n,0], x0[:])) >= 0.0001:
-    #        halt = 1
-
-    #    t = syslist[m][m].Ni_from[0]
-    #    if np.linalg.norm(np.subtract(x[syslist[m][m].n:syslist[m][m].n+syslist[t][t].n, 0], syslist[t][t].xt[0:syslist[t][t].n])) >= 0.0001:
-    #        halt = 1
-
-        return syslist
-        """
 
         return syslist
 
@@ -321,6 +277,8 @@ class FTOCP_ADMM(object):
 
             #syslist[m][t].lambda_x_old = syslist[m][t].lambda_x
             syslist[m][t].lambda_x = lambda_x_t
+
+
 
         return syslist
 
