@@ -226,6 +226,25 @@ def get_safe_set(x_cls, xf, agents, des_num_ts='all', des_num_iters='all'):
 	# pdb.set_trace()
 	return safe_sets_idxs, exploration_spaces
 
+def get_safe_set_cent(x_cls):
+	num_ts = 0
+	num_iters = len(x_cls)
+	cl_lens = []
+	for i in range(num_iters):
+		cl_lens.append(x_cls[i].shape[1])
+		if x_cls[i].shape[1] > num_ts:
+			num_ts = x_cls[i].shape[1]
+
+	it_range = range(num_iters)
+	ts_range = []
+	for i in it_range:
+		ts_range.append(range(cl_lens[i]))
+	ss_idxs = {'it_range' : it_range, 'ts_range' : ts_range}
+
+	safe_set_idxs = [ss_idxs]
+
+	return safe_set_idxs
+
 def inspect_safe_set(x, u, safe_sets_idxs, exploration_spaces, plot_lims=None):
 	n_a = len(x[-1])
 	n_SS = len(safe_sets_idxs[0])
