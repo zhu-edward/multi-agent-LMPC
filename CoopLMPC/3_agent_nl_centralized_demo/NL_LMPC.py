@@ -2,7 +2,7 @@ from __future__ import division
 
 import numpy as np
 from numpy import linalg as la
-import pdb, copy, sys
+import pdb, copy, sys, time
 
 import utils.utils
 
@@ -102,19 +102,20 @@ class NL_LMPC(object):
 		return np.flip(cost).tolist()
 
 	def solve(self, ts, x_t, x_f, tol, verbose=True):
+		solve_start = time.time()
 		# Get the safe set, cost-to-go, and indicies at this time step
 		if len(self.SS_t) == 1:
 			SS = self.SS_t[0]
 			Qfun = self.Qfun_t[0]
 			idxs = self.idxs_t[0]
 		else:
-			SS = self.SS_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
-			Qfun = self.Qfun_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
-			idxs = self.idxs_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
-		if self.expl_constrs is not None:
-			expl_con = self.expl_constrs[ts:ts+self.ftocp_N]
-		else:
-			expl_con = None
+			# SS = self.SS_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
+			# Qfun = self.Qfun_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
+			# idxs = self.idxs_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
+			SS = self.SS_t[min(ts, self.traj_lens[-1]-1)]
+			Qfun = self.Qfun_t[min(ts, self.traj_lens[-1]-1)]
+			idxs = self.idxs_t[min(ts, self.traj_lens[-1]-1)]
+		expl_con = None
 
 		cost_cands = []
 		x_pred_cands = []
@@ -132,7 +133,7 @@ class NL_LMPC(object):
 				# On new iteration, use predictions from first time step of last iteration
 				x_guess = self.x_preds_best[-1][0]
 				u_guess = self.u_preds_best[-1][0]
-			last_u = np.zeros(self.n_u)
+			last_u = np.zeros(self.n_u*self.n_a)
 		else:
 			# if self.ftocp_N == self.N:
 			if self.ftocp_N == self.ftocp_N_last:
@@ -150,7 +151,7 @@ class NL_LMPC(object):
 				u_guess = self.u_preds_best_it[-1][:,1:]
 			last_u = self.u_preds_best_it[-1][:,0]
 
-		pdb.set_trace()
+		# pdb.set_trace()
 
 		# Solve for each element in safe set
 		for i in range(SS.shape[1]):
@@ -168,11 +169,6 @@ class NL_LMPC(object):
 						u_guess=u_guess,
 						expl_constraints=expl_con,
 						verbose=verbose)
-					# x_pred, u_pred, cost = self.ftocp.solve(ts, x_t, x_ss, self.ftocp_N, last_u,
-					# 	x_guess=x_guess,
-					# 	u_guess=u_guess,
-					# 	expl_constraints=expl_con,
-					# 	verbose=verbose)
 					if cost is not None:
 						x_pred_cands.append(x_pred)
 						u_pred_cands.append(u_pred)

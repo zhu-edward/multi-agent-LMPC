@@ -103,22 +103,22 @@ class Centralized_DT_Kin_Bike_Model(object):
     def sim(self, x_k, u_k):
         x_kp1 = np.zeros(self.n_x*self.n_a)
         for i in range(self.n_a):
-            beta = np.arctan2(self.l_r*np.tan(u_k[i*2+0]), self.l_f + self.l_r)
-            x_kp1[i*4+0] = x_k[i*4+0] + self.dt*x_k[i*4+3]*np.cos(x_k[i*4+2] + beta)
-            x_kp1[i*4+1] = x_k[i*4+1] + self.dt*x_k[i*4+3]*np.sin(x_k[i*4+2] + beta)
-            x_kp1[i*4+2] = x_k[i*4+2] + self.dt*x_k[i*4+3]*np.sin(beta)
-            x_kp1[i*4+3] = x_k[i*4+3] + self.dt*u_k[i*2+1]
+            beta = np.arctan2(self.l_r*np.tan(u_k[i*self.n_u+0]), self.l_f + self.l_r)
+            x_kp1[i*self.n_x+0] = x_k[i*self.n_x+0] + self.dt*x_k[i*self.n_x+3]*np.cos(x_k[i*self.n_x+2] + beta)
+            x_kp1[i*self.n_x+1] = x_k[i*self.n_x+1] + self.dt*x_k[i*self.n_x+3]*np.sin(x_k[i*self.n_x+2] + beta)
+            x_kp1[i*self.n_x+2] = x_k[i*self.n_x+2] + self.dt*x_k[i*self.n_x+3]*np.sin(beta)
+            x_kp1[i*self.n_x+3] = x_k[i*self.n_x+3] + self.dt*u_k[i*self.n_u+1]
 
         return x_kp1
 
     def sim_ct(self, x, u):
         x_dot = np.zeros(self.n_x*self.n_a)
         for i in range(self.n_a):
-            beta = np.arctan2(self.l_r*np.tan(u[i*2+0]), self.l_f + self.l_r)
-            x_dot[i*4+0] = x[i*4+3]*np.cos(x[i*4+2] + beta)
-            x_dot[i*4+1] = x[i*4+3]*np.sin(x[i*4+2] + beta)
-            x_dot[i*4+2] = x[i*4+3]*np.sin(beta)
-            x_dot[i*4+3] = u[i*2+1]
+            beta = np.arctan2(self.l_r*np.tan(u[i*self.n_u+0]), self.l_f + self.l_r)
+            x_dot[i*self.n_x+0] = x[i*self.n_x+3]*np.cos(x[i*self.n_x+2] + beta)
+            x_dot[i*self.n_x+1] = x[i*self.n_x+3]*np.sin(x[i*self.n_x+2] + beta)
+            x_dot[i*self.n_x+2] = x[i*self.n_x+3]*np.sin(beta)
+            x_dot[i*self.n_x+3] = u[i*self.n_u+1]
 
         return x_dot
 
@@ -129,18 +129,18 @@ class Centralized_DT_Kin_Bike_Model(object):
             A = np.zeros((self.n_x, self.n_x))
             B = np.zeros((self.n_x, self.n_u))
 
-            beta = np.arctan2(self.l_r*np.tan(u[i*2+0]), self.l_f + self.l_r)
-            dbeta_ddf = lambda df : self.l_r/(np.cos(u[i*2+0])**2*(self.l_f+self.l_r)*(1+(self.l_r*np.tan(u[i*2+0])/(self.l_f+self.l_r))**2))
+            beta = np.arctan2(self.l_r*np.tan(u[i*self.n_u+0]), self.l_f + self.l_r)
+            dbeta_ddf = lambda df : self.l_r/(np.cos(u[i*self.n_u+0])**2*(self.l_f+self.l_r)*(1+(self.l_r*np.tan(u[i*self.n_u+0])/(self.l_f+self.l_r))**2))
 
-            A[0,2] = -x[i*4+3]*np.sin(x[i*4+2]+beta)
-            A[0,3] = np.cos(x[i*4+2]+beta)
-            A[1,2] = x[i*4+3]*np.cos(x[i*4+2]+beta)
-            A[1,3] = np.sin(x[i*4+2]+beta)
+            A[0,2] = -x[i*self.n_x+3]*np.sin(x[i*self.n_x+2]+beta)
+            A[0,3] = np.cos(x[i*self.n_x+2]+beta)
+            A[1,2] = x[i*self.n_x+3]*np.cos(x[i*self.n_x+2]+beta)
+            A[1,3] = np.sin(x[i*self.n_x+2]+beta)
             A[2,3] = np.sin(beta)/self.l_r
 
-            B[0,0] = -x[i*4+3]*np.sin(x[i*4+2]+beta)*dbeta_ddf(u[i*2+0])
-            B[1,0] = x[i*4+3]*np.cos(x[i*4+2]+beta)*dbeta_ddf(u[i*2+0])
-            B[2,0] = x[i*4+3]*np.cos(beta)*dbeta_ddf(u[i*2+0])/self.l_r
+            B[0,0] = -x[i*self.n_x+3]*np.sin(x[i*self.n_x+2]+beta)*dbeta_ddf(u[i*self.n_u+0])
+            B[1,0] = x[i*self.n_x+3]*np.cos(x[i*self.n_x+2]+beta)*dbeta_ddf(u[i*self.n_u+0])
+            B[2,0] = x[i*self.n_x+3]*np.cos(beta)*dbeta_ddf(u[i*self.n_u+0])/self.l_r
             B[3,1] = 1
 
             A_c.append(A)

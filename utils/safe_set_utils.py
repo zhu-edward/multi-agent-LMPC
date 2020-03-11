@@ -226,22 +226,37 @@ def get_safe_set(x_cls, xf, agents, des_num_ts='all', des_num_iters='all'):
 	# pdb.set_trace()
 	return safe_sets_idxs, exploration_spaces
 
-def get_safe_set_cent(x_cls):
+def get_safe_set_cent(x_cls, des_num_ts='all', des_num_iters='all'):
 	num_ts = 0
 	num_iters = len(x_cls)
 	cl_lens = []
-	for i in range(num_iters):
+
+	if des_num_iters == 'all':
+		des_num_iters = num_iters
+	if des_num_ts == 'all':
+		des_num_ts = num_ts
+
+	# Determine starting iteration index and ending time step index
+	it_start = max(0, num_iters-des_num_iters)
+	it_range = range(it_start, num_iters)
+
+	for i in it_range:
 		cl_lens.append(x_cls[i].shape[1])
 		if x_cls[i].shape[1] > num_ts:
 			num_ts = x_cls[i].shape[1]
 
-	it_range = range(num_iters)
-	ts_range = []
-	for i in it_range:
-		ts_range.append(range(cl_lens[i]))
-	ss_idxs = {'it_range' : it_range, 'ts_range' : ts_range}
+	safe_set_idxs = []
+	for t in range(num_ts):
+		ts_end = t + des_num_ts
+		ts_range = []
+		for i in it_range:
+			ts_range.append(range(min(t, cl_lens[i]-1), min(ts_end, cl_lens[i])))
+			# ts_range.append(range(cl_lens[i]))
+		ss_idxs = {'it_range' : it_range, 'ts_range' : ts_range}
 
-	safe_set_idxs = [ss_idxs]
+		safe_set_idxs.append(ss_idxs)
+
+	# pdb.set_trace()
 
 	return safe_set_idxs
 

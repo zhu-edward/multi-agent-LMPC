@@ -145,15 +145,20 @@ def solve_lmpc_cent(lmpc, x_0, x_f, model_agent, verbose=False, visualizer=None,
 	u_ol = []
 
 	xcl = x_0.reshape((-1,1)) # initialize system state
-	ucl = np.empty((n_u,0))
+	ucl = np.empty((n_u*n_a,0))
 
 	inspect = False
+	solve_times = []
 
 	t = 0
 	# time Loop (Perform the task until close to the origin)
 	while True:
+		goal_reached = True
 		x_t = xcl[:,t] # Read measurements
+		solve_start = time.time()
 		x_pred, u_pred, cost, SS, N = lmpc.solve(t, x_t, x_f, tol, verbose=verbose) # Solve FTOCP
+		solve_end = time.time()
+		solve_time = solve_end - solve_start
 		# Inspect incomplete trajectory
 		if x_pred is None or u_pred is None and visualizer is not None:
 			# visualizer.traj_inspector(xcl, ucl, x_ol, u_ol, t, lmpc.SS_t, lmpc.expl_constrs)
@@ -169,13 +174,18 @@ def solve_lmpc_cent(lmpc, x_0, x_f, model_agent, verbose=False, visualizer=None,
 		ucl = np.append(ucl, u_t.reshape((-1,1)), axis=1)
 		xcl = np.append(xcl, x_tp1.reshape((-1,1)), axis=1)
 
+		solve_times.append(solve_time)
 		print('ts: %g, d: %g, x: %g, y: %g, phi: %g, v: %g' % (t, la.norm(x_tp1-x_f, ord=2), x_t[0], x_t[1], x_t[2]*180.0/np.pi, x_t[3]))
 
 		if visualizer is not None:
 			for i in range(n_a):
 				visualizer[i].plot_traj(xcl[i*n_x:(i+1)*n_x,:], ucl[i*n_u:(i+1)*n_u,:], x_pred[i*n_x:(i+1)*n_x,:], u_pred[i*n_u:(i+1)*n_u,:], t, shade=False)
 
-		if la.norm(x_tp1-x_f, ord=2) <= 10**tol:
+		for i in range(n_a):
+			if la.norm(x_tp1[i*n_x:(i+1)*n_x]-x_f[i*n_x:(i+1)*n_x], ord=2) > 10**tol:
+				goal_reached &= False
+
+		if goal_reached:
 			print('Tolerance reached, agent reached goal state')
 			break
 
@@ -188,7 +198,7 @@ def solve_lmpc_cent(lmpc, x_0, x_f, model_agent, verbose=False, visualizer=None,
 	# if inspect:
 		# visualizer.traj_inspector(xcl, ucl, x_pred_log, u_pred_log, t, lmpc.SS_t, lmpc.expl_constrs)
 
-	return xcl, ucl, x_ol, u_ol
+	return xcl, ucl, x_ol, u_ol, solve_times
 
 def main():
 	parser = argparse.ArgumentParser()
@@ -238,7 +248,7 @@ def main():
 	# x_0 = np.concatenate(x_0)
 
 	# Initialize dynamics and control agents (allows for dynamics to be simulated with higher resolution than control rate)
-	model_agents = [DT_Kin_Bike_Agent(l_r, l_f, w, model_dt, col_buf=col_buf, v_lim=[-0.1, 10.0]) for i in range(n_a)]
+	model_agents = [DT_Kin_Bike_Agent(l_r, l_f, w, model_dt, col_buf=col_buf, v_lim=[-0.05, 10.0]) for i in range(n_a)]
 	mpc_control_agents = [DT_Kin_Bike_Agent(l_r, l_f, w, control_dt, col_buf=col_buf, a_lim=[-1.0, 1.0], df_lim=[-0.5, 0.5], da_lim=[-1.5, 1.5], ddf_lim=[-0.3, 0.3]) for i in range(n_a)]
 	cent_model_agent = Centralized_DT_Kin_Bike_Agent(l_r, l_f, w, model_dt, n_a, col_buf=col_buf, v_lim=[-0.05, 10.0])
 	lmpc_control_agent = Centralized_DT_Kin_Bike_Agent(l_r, l_f, w, control_dt, n_a, col_buf=col_buf, v_lim=[-0.05, 10.0])
@@ -379,6 +389,7 @@ def main():
 
 	# Initialize LMPC objects for each agent
 	N_LMPC = 20 # horizon lengths
+	# N_LMPC = 10 # horizon lengths
 	lmpc_ftocp = NL_FTOCP(lmpc_control_agent) # ftocp solve by LMPC
 	lmpc = NL_LMPC(lmpc_ftocp, N_LMPC) # Initialize the LMPC
 
@@ -386,8 +397,7 @@ def main():
 	ucls_cent = [copy.copy(ucl_feas_cent)]
 
 	ss_n_t = 175
-	# ss_n_t = 5
-	ss_n_j = 1
+	ss_n_j = 2
 
 	totalIterations = 30 # Number of iterations to perform
 	start_time = time.strftime("%Y-%m-%d_%H-%M-%S")
@@ -398,8 +408,9 @@ def main():
 	lmpc_vis = [lmpc_visualizer(pos_dims=[0,1], n_state_dims=n_x, n_act_dims=n_u, agent_id=i, n_agents=n_a, plot_lims=plot_lims) for i in range(n_a)]
 	# lmpc_vis = None
 
+	it_times = []
+	solve_times = []
 	print('Starting multi-agent LMPC...')
-
 	# run simulation
 	# iteration loop
 	for it in range(totalIterations):
@@ -407,10 +418,12 @@ def main():
 		it_dir = '/'.join((exp_dir, 'it_%i' % (it+1)))
 		os.makedirs(it_dir)
 
-		# plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, save_video=True, it=it)
+		plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, save_video=True, it=it)
+
+		it_start = time.time()
 
 		# Compute safe sets and exploration spaces along previous trajectory
-		ss_idxs = get_safe_set_cent(xcls_cent)
+		ss_idxs = get_safe_set_cent(xcls_cent, ss_n_t, ss_n_j)
 
 		# inspect_safe_set(xcls, ucls, ss_idxs, expl_constrs, plot_lims)
 
@@ -426,11 +439,11 @@ def main():
 		u_ol_it = []
 
 		print('Solving trajectory for iteration %i' % (it+1))
-		it_start = time.time()
+
 		if lmpc_vis[i] is not None:
 			lmpc_vis[i].set_save_dir(it_dir)
 
-		x_cl, u_cl, x_ol, u_ol = solve_lmpc_cent(lmpc, x_0, x_f, cent_model_agent, visualizer=lmpc_vis, pause=pause_each_solve, tol=tol)
+		x_cl, u_cl, x_ol, u_ol, solve_t = solve_lmpc_cent(lmpc, x_0, x_f, cent_model_agent, visualizer=lmpc_vis, pause=pause_each_solve, tol=tol)
 		u_cl= np.append(u_cl, np.zeros((n_a*n_u,1)), axis=1)
 
 		it_end = time.time()
@@ -440,6 +453,8 @@ def main():
 		u_ol_it.append(u_ol)
 		xcls_cent.append(x_cl)
 		ucls_cent.append(u_cl)
+		it_times.append(it_end - it_start)
+		solve_times.append(solve_t)
 
 		xcls.append([x_cl[i*n_x:(i+1)*n_x,:] for i in range(n_a)])
 		ucls.append([u_cl[i*n_u:(i+1)*n_u,:] for i in range(n_a)])
@@ -452,6 +467,8 @@ def main():
 		pickle.dump(ucls_cent, open('/'.join((it_dir, 'u_cls.pkl')), 'wb'))
 		pickle.dump(x_ol_it, open('/'.join((it_dir, 'x_ol.pkl')), 'wb'))
 		pickle.dump(u_ol_it, open('/'.join((it_dir, 'u_ol.pkl')), 'wb'))
+		pickle.dump(it_times, open('/'.join((it_dir, 'it_times.pkl')), 'wb'))
+		pickle.dump(solve_times, open('/'.join((it_dir, 'solve_times.pkl')), 'wb'))
 
 	# Plot last trajectory
 	plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, save_video=True, it=it)

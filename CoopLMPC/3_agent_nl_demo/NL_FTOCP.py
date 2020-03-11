@@ -285,7 +285,7 @@ class NL_FTOCP(object):
         if la.norm(slack_val) > 2e-8:
             print('Warning! Solved, but with slack norm of %g is greater than 1e-8!' % la.norm(slack_val))
 
-        if sol.stats()['success'] and la.norm(slack_val) <= 1e-8:
+        if sol.stats()['success'] and la.norm(slack_val) <= 2e-8:
             feasible = True
 
             x_pred = sol.value(x)
@@ -301,4 +301,5 @@ class NL_FTOCP(object):
 
             # pdb.set_trace()
 
+        print(u_pred)
         return x_pred, u_pred, sol_cost

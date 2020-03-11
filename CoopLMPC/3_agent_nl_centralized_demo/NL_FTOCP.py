@@ -2,7 +2,7 @@ import casadi as ca
 import numpy as np
 import numpy.linalg as la
 
-import pdb
+import pdb, itertools
 
 class NL_FTOCP(object):
     def __init__(self, agent):
@@ -232,8 +232,8 @@ class NL_FTOCP(object):
             opti.set_initial(u, u_guess)
         opti.set_initial(slack, np.zeros(self.n_x*self.n_a))
 
-        da_lim = self.agent.da_lim
-        ddf_lim = self.agent.ddf_lim
+        da_lim = self.da_lim
+        ddf_lim = self.ddf_lim
 
         pairs = list(itertools.combinations(range(self.n_a), 2))
 
@@ -247,10 +247,9 @@ class NL_FTOCP(object):
             stage_cost = stage_cost + 1
 
             for j in range(self.n_a):
-                beta = ca.atan2(self.l_r*ca.tan(u[j*self.n_u+0,i]), self.l_f+self.l_r)
-                opti.subject_to(x[j*self.n_x+0,i+1] == x[j*self.n_x+0,i] + self.dt*x[j*self.n_x+3,i]*ca.cos(x[j*self.n_x+2,i] + beta))
-                opti.subject_to(x[j*self.n_x+1,i+1] == x[j*self.n_x+1,i] + self.dt*x[j*self.n_x+3,i]*ca.sin(x[j*self.n_x+2,i] + beta))
-                opti.subject_to(x[j*self.n_x+2,i+1] == x[j*self.n_x+2,i] + self.dt*x[j*self.n_x+3,i]*ca.sin(beta))
+                opti.subject_to(x[j*self.n_x+0,i+1] == x[j*self.n_x+0,i] + self.dt*x[j*self.n_x+3,i]*ca.cos(x[j*self.n_x+2,i] + ca.atan2(self.l_r*ca.tan(u[j*self.n_u+0,i]), self.l_f + self.l_r)))
+                opti.subject_to(x[j*self.n_x+1,i+1] == x[j*self.n_x+1,i] + self.dt*x[j*self.n_x+3,i]*ca.sin(x[j*self.n_x+2,i] + ca.atan2(self.l_r*ca.tan(u[j*self.n_u+0,i]), self.l_f + self.l_r)))
+                opti.subject_to(x[j*self.n_x+2,i+1] == x[j*self.n_x+2,i] + self.dt*x[j*self.n_x+3,i]*ca.sin(ca.atan2(self.l_r*ca.tan(u[j*self.n_u+0,i]), self.l_f + self.l_r)))
                 opti.subject_to(x[j*self.n_x+3,i+1] == x[j*self.n_x+3,i] + self.dt*u[j*self.n_u+1,i])
 
             if self.F is not None:
@@ -263,12 +262,14 @@ class NL_FTOCP(object):
                 w = expl_constraints[i][1]
                 opti.subject_to(ca.mtimes(V, x[:2,i]) + w <= np.zeros(len(w)))
 
+            # Collision avoidance constraint
             for p in pairs:
-                opti.subject_to(ca.norm_2(x[p[0]*self.n_x:p[0]*self.n_x+1,i] - x[p[1]*self.n_x:p[1]*self.n_x+1,i]) >= self.r)
+                opti.subject_to(ca.norm_2(x[p[0]*self.n_x:p[0]*self.n_x+2,i] - x[p[1]*self.n_x:p[1]*self.n_x+2,i]) >= 2*self.r)
 
             if i < N-1:
-                opti.subject_to(opti.bounded(ddf_lim[0]*self.dt, u[j*self.n_u+0,i+1]-u[j*self.n_u+0,i], ddf_lim[1]*self.dt))
-                opti.subject_to(opti.bounded(da_lim[0]*self.dt, u[j*self.n_u+1,i+1]-u[j*self.n_u+1,i], da_lim[1]*self.dt))
+                for j in range(self.n_a):
+                    opti.subject_to(opti.bounded(ddf_lim[0]*self.dt, u[j*self.n_u+0,i+1]-u[j*self.n_u+0,i], ddf_lim[1]*self.dt))
+                    opti.subject_to(opti.bounded(da_lim[0]*self.dt, u[j*self.n_u+1,i+1]-u[j*self.n_u+1,i], da_lim[1]*self.dt))
 
         opti.subject_to(x[:,N] - x_ss == slack)
 
@@ -292,9 +293,9 @@ class NL_FTOCP(object):
 
         slack_val = sol.value(slack)
         if la.norm(slack_val) > 2e-8:
-            print('Warning! Solved, but with slack norm of %g is greater than 1e-8!' % la.norm(slack_val))
+            print('Warning! Solved, but with slack norm of %g is greater than 2e-8!' % la.norm(slack_val))
 
-        if sol.stats()['success'] and la.norm(slack_val) <= 1e-8:
+        if sol.stats()['success'] and la.norm(slack_val) <= 2e-8:
             feasible = True
 
             x_pred = sol.value(x)

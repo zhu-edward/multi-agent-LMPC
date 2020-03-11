@@ -95,12 +95,16 @@ def solve_lmpc(lmpc, x_0, x_f, model_agent, verbose=False, visualizer=None, paus
 	ucl = np.empty((n_u,0))
 
 	inspect = False
+	solve_times = []
 
 	t = 0
 	# time Loop (Perform the task until close to the origin)
 	while True:
 		x_t = xcl[:,t] # Read measurements
+		solve_start = time.time()
 		x_pred, u_pred, cost, SS, N = lmpc.solve(t, x_t, x_f, tol, verbose=verbose) # Solve FTOCP
+		solve_end = time.time()
+		solve_time = solve_end - solve_start
 		# Inspect incomplete trajectory
 		if x_pred is None or u_pred is None and visualizer is not None:
 			# visualizer.traj_inspector(xcl, ucl, x_ol, u_ol, t, lmpc.SS_t, lmpc.expl_constrs)
@@ -116,6 +120,7 @@ def solve_lmpc(lmpc, x_0, x_f, model_agent, verbose=False, visualizer=None, paus
 		ucl = np.append(ucl, u_t.reshape((-1,1)), axis=1)
 		xcl = np.append(xcl, x_tp1.reshape((-1,1)), axis=1)
 
+		solve_times.append(solve_time)
 		print('ts: %g, d: %g, x: %g, y: %g, phi: %g, v: %g' % (t, la.norm(x_tp1-x_f, ord=2), x_t[0], x_t[1], x_t[2]*180.0/np.pi, x_t[3]))
 
 		if visualizer is not None:
@@ -134,7 +139,7 @@ def solve_lmpc(lmpc, x_0, x_f, model_agent, verbose=False, visualizer=None, paus
 	# if inspect:
 		# visualizer.traj_inspector(xcl, ucl, x_pred_log, u_pred_log, t, lmpc.SS_t, lmpc.expl_constrs)
 
-	return xcl, ucl, x_ol, u_ol
+	return xcl, ucl, x_ol, u_ol, solve_times
 
 def main():
 	parser = argparse.ArgumentParser()
@@ -328,8 +333,7 @@ def main():
 	ucls = [copy.copy(ucl_feas)]
 
 	ss_n_t = 175
-	# ss_n_t = 5
-	ss_n_j = 1
+	ss_n_j = 2
 
 	totalIterations = 30 # Number of iterations to perform
 	start_time = time.strftime("%Y-%m-%d_%H-%M-%S")
@@ -340,6 +344,9 @@ def main():
 	lmpc_vis = [lmpc_visualizer(pos_dims=[0,1], n_state_dims=n_x, n_act_dims=n_u, agent_id=i, n_agents=n_a, plot_lims=plot_lims) for i in range(n_a)]
 	# lmpc_vis = None
 
+	it_times = []
+	agent_times = []
+	agent_solve_times = []
 	print('Starting multi-agent LMPC...')
 
 	# run simulation
@@ -350,6 +357,8 @@ def main():
 		os.makedirs(it_dir)
 
 		plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, save_video=True, it=it)
+
+		it_start = time.time()
 
 		# Compute safe sets and exploration spaces along previous trajectory
 		ss_idxs, expl_constrs = get_safe_set(xcls, x_f, lmpc_control_agents, ss_n_t, ss_n_j)
@@ -366,14 +375,14 @@ def main():
 			for lv in lmpc_vis:
 				lv.update_prev_trajs(state_traj=xcls, act_traj=ucls)
 
-		it_start = time.time()
-
 		x_cl_it = []
 		u_cl_it = []
 		x_ol_it = []
 		u_ol_it = []
 
 		# agent loop
+		agent_time = []
+		agent_solve_time = []
 		for i in range(n_a):
 			print('Solving trajectory for agent %i' % (i+1))
 			agent_start = time.time()
@@ -382,7 +391,7 @@ def main():
 			if lmpc_vis[i] is not None:
 				lmpc_vis[i].set_save_dir(agent_dir)
 
-			x_cl, u_cl, x_ol, u_ol = solve_lmpc(lmpc[i], x_0[i], x_f[i], model_agents[i], visualizer=lmpc_vis[i], pause=pause_each_solve, tol=tol)
+			x_cl, u_cl, x_ol, u_ol, solve_t = solve_lmpc(lmpc[i], x_0[i], x_f[i], model_agents[i], visualizer=lmpc_vis[i], pause=pause_each_solve, tol=tol)
 			u_cl= np.append(u_cl, np.zeros((n_u,1)), axis=1)
 
 			x_cl_it.append(x_cl)
@@ -391,12 +400,17 @@ def main():
 			u_ol_it.append(u_ol)
 
 			agent_end = time.time()
+			agent_time.append(agent_end - agent_start)
+			agent_solve_time.append(solve_t)
 			print('Time elapsed: %g, trajectory length: %i' % (agent_end-agent_start, x_cl.shape[1]))
 
 		xcls.append(x_cl_it)
 		ucls.append(u_cl_it)
 
 		it_end = time.time()
+		it_times.append(it_end - it_start)
+		agent_times.append(agent_time)
+		agent_solve_times.append(agent_solve_time)
 		print('Time elapsed for iteration %i: %g s' % (it+1, it_end - it_start))
 
 		# Save iteration data
@@ -407,6 +421,9 @@ def main():
 		pickle.dump(ucls, open('/'.join((it_dir, 'u_cls.pkl')), 'wb'))
 		pickle.dump(x_ol_it, open('/'.join((it_dir, 'x_ol.pkl')), 'wb'))
 		pickle.dump(u_ol_it, open('/'.join((it_dir, 'u_ol.pkl')), 'wb'))
+		pickle.dump(it_times, open('/'.join((it_dir, 'it_times.pkl')), 'wb'))
+		pickle.dump(agent_times, open('/'.join((it_dir, 'agent_times.pkl')), 'wb'))
+		pickle.dump(agent_solve_times, open('/'.join((it_dir, 'agent_solve_times.pkl')), 'wb'))
 
 	# Plot last trajectory
 	plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, save_video=True, it=it)
