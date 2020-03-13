@@ -303,10 +303,10 @@ def main():
 	# 	ucl_feas[i] = np.hstack((np.zeros((n_u, before_len)), ucl_feas[i]))
 
 	for i in range(n_a):
-		before_len = 50
+		before_len = 50*i
 
-		xcl_feas[i] = np.hstack((np.tile(x_0[i].reshape((-1,1)), before_len*i), xcl_feas[i]))
-		ucl_feas[i] = np.hstack((np.zeros((n_u, before_len*i)), ucl_feas[i]))
+		xcl_feas[i] = np.hstack((np.tile(x_0[i].reshape((-1,1)), before_len), xcl_feas[i]))
+		ucl_feas[i] = np.hstack((np.zeros((n_u, before_len)), ucl_feas[i]))
 
 	if plot_init:
 		plot_bike_agent_trajs(xcl_feas, ucl_feas, model_agents, model_dt, trail=True, plot_lims=plot_lims, it=0)
@@ -335,7 +335,7 @@ def main():
 	ss_n_t = 175
 	ss_n_j = 2
 
-	totalIterations = 30 # Number of iterations to perform
+	totalIterations = 100 # Number of iterations to perform
 	start_time = time.strftime("%Y-%m-%d_%H-%M-%S")
 	exp_dir = '/'.join((out_dir, start_time))
 	os.makedirs(exp_dir)

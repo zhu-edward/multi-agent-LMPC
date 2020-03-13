@@ -355,7 +355,7 @@ def main():
 
 	for i in range(n_a):
 		before_len = 50*i
-		after_len = np.amax(xcl_lens) - xcl_lens[i] + 50*(n_a-(i-1))
+		after_len = np.amax(xcl_lens) - xcl_lens[i] + 50*(n_a-(i+1))
 
 		# xcl_feas[i] = np.hstack((np.tile(x_0[i].reshape((-1,1)), before_len), xcl_feas[i]))
 		# ucl_feas[i] = np.hstack((np.zeros((n_u, before_len)), ucl_feas[i]))
@@ -399,7 +399,7 @@ def main():
 	ss_n_t = 175
 	ss_n_j = 2
 
-	totalIterations = 30 # Number of iterations to perform
+	totalIterations = 100 # Number of iterations to perform
 	start_time = time.strftime("%Y-%m-%d_%H-%M-%S")
 	exp_dir = '/'.join((out_dir, start_time))
 	os.makedirs(exp_dir)
@@ -417,6 +417,10 @@ def main():
 		print('****************** Iteration %i ******************' % (it+1))
 		it_dir = '/'.join((exp_dir, 'it_%i' % (it+1)))
 		os.makedirs(it_dir)
+
+		if lmpc_vis is not None:
+			for lv in lmpc_vis:
+				lv.set_save_dir(it_dir)
 
 		plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, save_video=True, it=it)
 
@@ -439,9 +443,6 @@ def main():
 		u_ol_it = []
 
 		print('Solving trajectory for iteration %i' % (it+1))
-
-		if lmpc_vis[i] is not None:
-			lmpc_vis[i].set_save_dir(it_dir)
 
 		x_cl, u_cl, x_ol, u_ol, solve_t = solve_lmpc_cent(lmpc, x_0, x_f, cent_model_agent, visualizer=lmpc_vis, pause=pause_each_solve, tol=tol)
 		u_cl= np.append(u_cl, np.zeros((n_a*n_u,1)), axis=1)

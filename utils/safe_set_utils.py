@@ -249,7 +249,7 @@ def get_safe_set_cent(x_cls, des_num_ts='all', des_num_iters='all'):
 	for t in range(num_ts):
 		ts_end = t + des_num_ts
 		ts_range = []
-		for i in it_range:
+		for i in range(len(it_range)):
 			ts_range.append(range(min(t, cl_lens[i]-1), min(ts_end, cl_lens[i])))
 			# ts_range.append(range(cl_lens[i]))
 		ss_idxs = {'it_range' : it_range, 'ts_range' : ts_range}
