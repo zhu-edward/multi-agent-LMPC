@@ -301,5 +301,4 @@ class NL_FTOCP(object):
 
             # pdb.set_trace()
 
-        print(u_pred)
         return x_pred, u_pred, sol_cost

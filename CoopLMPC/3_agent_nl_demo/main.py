@@ -26,7 +26,7 @@ from agents import DT_Kin_Bike_Agent
 
 from utils.plot_bike_utils import plot_bike_agent_trajs
 from utils.lmpc_visualizer import lmpc_visualizer
-from utils.safe_set_utils import get_safe_set, inspect_safe_set
+from utils.safe_set_utils import get_safe_set, get_safe_set_2, inspect_safe_set
 import utils.utils
 
 def solve_init_traj(ftocp, x_0, model_agent, visualizer=None, tol=-7):
@@ -144,6 +144,7 @@ def solve_lmpc(lmpc, x_0, x_f, model_agent, verbose=False, visualizer=None, paus
 def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--init_traj', action='store_true', help='Use trajectory from file', default=False)
+	parser.add_argument('--from_checkpoint', type=str, help='Directory of checkpoint to start from', default=None)
 	args = parser.parse_args()
 
 	out_dir = '/'.join((BASE_DIR, 'out'))
@@ -153,6 +154,9 @@ def main():
 	log_dir = '/'.join((BASE_DIR, 'logs'))
 	if not os.path.exists(log_dir):
 		os.makedirs(log_dir)
+
+	if args.from_checkpoint is not None:
+		checkpoint_dir = '/'.join((out_dir, args.from_checkpoint))
 
 	# Flags
 	plot_init = False # Plot initial trajectory
@@ -323,14 +327,19 @@ def main():
 	# Run LMPC
 	# ====================================================================================
 
-	# Initialize LMPC objects for each agent
-	N_LMPC = [20, 20, 20] # horizon lengths
-	# N_LMPC = [15, 15, 15] # horizon lengths
-	lmpc_ftocp = [NL_FTOCP(lmpc_control_agents[i]) for i in range(n_a)]# ftocp solve by LMPC
-	lmpc = [NL_LMPC(f, N_LMPC[i]) for f in lmpc_ftocp]# Initialize the LMPC
+	if args.from_checkpoint is not None:
+		lmpc = pickle.load(open(checkpoint_dir + '/lmpc.pkl', 'rb'))
+		xcls = pickle.load(open(checkpoint_dir + '/x_cls.pkl', 'rb'))
+		ucls = pickle.load(open(checkpoint_dir + '/u_cls.pkl', 'rb'))
+	else:
+		# Initialize LMPC objects for each agent
+		N_LMPC = [20, 20, 20] # horizon lengths
+		# N_LMPC = [15, 15, 15] # horizon lengths
+		lmpc_ftocp = [NL_FTOCP(lmpc_control_agents[i]) for i in range(n_a)]# ftocp solve by LMPC
+		lmpc = [NL_LMPC(f, N_LMPC[i]) for f in lmpc_ftocp]# Initialize the LMPC
 
-	xcls = [copy.copy(xcl_feas)]
-	ucls = [copy.copy(ucl_feas)]
+		xcls = [copy.copy(xcl_feas)]
+		ucls = [copy.copy(ucl_feas)]
 
 	ss_n_t = 175
 	ss_n_j = 2
@@ -361,7 +370,8 @@ def main():
 		it_start = time.time()
 
 		# Compute safe sets and exploration spaces along previous trajectory
-		ss_idxs, expl_constrs = get_safe_set(xcls, x_f, lmpc_control_agents, ss_n_t, ss_n_j)
+		# ss_idxs, expl_constrs = get_safe_set(xcls, lmpc_control_agents, ss_n_t, ss_n_j)
+		ss_idxs, expl_constrs = get_safe_set_2(xcls, lmpc_control_agents, ss_n_t, ss_n_j)
 
 		# inspect_safe_set(xcls, ucls, ss_idxs, expl_constrs, plot_lims)
 
