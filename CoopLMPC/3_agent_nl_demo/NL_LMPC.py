@@ -106,9 +106,14 @@ class NL_LMPC(object):
 
 	def solve(self, ts, x_t, x_f, tol, verbose=True):
 		# Get the safe set, cost-to-go, and indicies at this time step
-		SS = self.SS_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
-		Qfun = self.Qfun_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
-		idxs = self.idxs_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
+		# SS = self.SS_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
+		# Qfun = self.Qfun_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
+		# idxs = self.idxs_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
+
+		SS = self.SS_t[min(ts+self.ftocp_N, len(self.SS_t)-1)]
+		Qfun = self.Qfun_t[min(ts+self.ftocp_N, len(self.Qfun_t)-1)]
+		idxs = self.idxs_t[min(ts+self.ftocp_N, len(self.idxs_t)-1)]
+
 		if self.expl_constrs is not None:
 			expl_con = self.expl_constrs[ts:ts+self.ftocp_N]
 		else:

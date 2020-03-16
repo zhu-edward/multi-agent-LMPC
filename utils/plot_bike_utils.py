@@ -131,7 +131,7 @@ def plot_bike_agent_trajs(x, u, agents, dt, trail=False, shade=False, plot_lims=
 			text_lines.append(ax.text(x_t[0]+r_a[i]+0.5,
 				x_t[1]+r_a[i]+0.5, str(i+1), fontsize=6,
 				bbox=dict(facecolor='white', alpha=1.)))
-				
+
 			psi_ax.relim()
 			psi_ax.autoscale_view()
 			v_ax.relim()
@@ -169,5 +169,6 @@ def plot_bike_agent_trajs(x, u, agents, dt, trail=False, shade=False, plot_lims=
 
 	if save_dir is not None:
 		fig.savefig('/'.join((save_dir, 'it_%i.png' % (it+1))))
+		plt.close(fig)
 
 	return fig, fig_a
