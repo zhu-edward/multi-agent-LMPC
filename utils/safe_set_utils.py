@@ -463,30 +463,6 @@ def get_safe_set_2(x_cls, agents, des_num_ts='all', des_num_iters='all'):
 				raise(ValueError('Safe set not contained in exploration space at time %i' % t))
 
 	# pdb.set_trace()
-
-	# Adjust safe sets from before last_invalid_t to have the same iteration and time range and test that safe sets are contained
-	# in the exploration spaces at each time step
-	# for t in range(num_ts-1):
-	# 	for a in range(n_a):
-	# 		if t <=  last_invalid_t:
-	# 			old_it_len = len(safe_sets_idxs[a][t]['it_range'])
-	# 			safe_sets_idxs[a][t]['it_range'] = safe_sets_idxs[a][last_invalid_t+1]['it_range'] # Update iteration range
-	# 			new_it_len = len(safe_sets_idxs[a][t]['it_range'])
-	# 			for _ in range(old_it_len - new_it_len):
-	# 				safe_sets_idxs[a][t]['ts_range'].pop(0) # Throw away iterations that we don't include anymore
-	# 			for i in range(new_it_len):
-	# 				n_ss = len(safe_sets_idxs[a][t]['ts_range'][i])
-	# 				if n_ss > des_num_ts:
-	# 					safe_sets_idxs[a][t]['ts_range'][i] = safe_sets_idxs[a][t]['ts_range'][i][:des_num_ts] # Update time range for remaining iterations
-	#
-	# 		safe_set_pos = np.empty((2,0))
-	# 		for (i, j) in enumerate(safe_sets_idxs[a][t]['it_range']):
-	# 			safe_set_pos = np.append(safe_set_pos, x_cls[j][a][:2,safe_sets_idxs[a][t]['ts_range'][i]], axis=1)
-	# 		in_exp_space = (exploration_spaces[a][t][0].dot(safe_set_pos) + exploration_spaces[a][t][1].reshape((-1,1)) <= 0)
-	# 		if not np.all(in_exp_space):
-	# 			raise(ValueError('Safe set not contained in exploration space at time %i' % t))
-
-	# pdb.set_trace()
 	return safe_sets_idxs, exploration_spaces
 
 def get_safe_set_cent(x_cls, des_num_ts='all', des_num_iters='all'):
@@ -511,6 +487,8 @@ def get_safe_set_cent(x_cls, des_num_ts='all', des_num_iters='all'):
 	safe_set_idxs = []
 	for t in range(num_ts):
 		ts_end = t + des_num_ts
+		print('Constructing safe set from iteration %i to %i and time %i to %i' % (it_start, num_iters-1, t, ts_end-1))
+		
 		ts_range = []
 		for i in range(len(it_range)):
 			ts_range.append(range(min(t, cl_lens[i]-1), min(ts_end, cl_lens[i])))

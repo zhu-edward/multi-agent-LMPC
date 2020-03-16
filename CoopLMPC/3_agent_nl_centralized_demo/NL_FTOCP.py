@@ -252,6 +252,10 @@ class NL_FTOCP(object):
                 opti.subject_to(x[j*self.n_x+2,i+1] == x[j*self.n_x+2,i] + self.dt*x[j*self.n_x+3,i]*ca.sin(ca.atan2(self.l_r*ca.tan(u[j*self.n_u+0,i]), self.l_f + self.l_r)))
                 opti.subject_to(x[j*self.n_x+3,i+1] == x[j*self.n_x+3,i] + self.dt*u[j*self.n_u+1,i])
 
+                if i < N-1:
+                    opti.subject_to(opti.bounded(ddf_lim[0]*self.dt, u[j*self.n_u+0,i+1]-u[j*self.n_u+0,i], ddf_lim[1]*self.dt))
+                    opti.subject_to(opti.bounded(da_lim[0]*self.dt, u[j*self.n_u+1,i+1]-u[j*self.n_u+1,i], da_lim[1]*self.dt))
+
             if self.F is not None:
                 opti.subject_to(ca.mtimes(self.F, x[:,i]) <= self.b)
             if self.H is not None:
@@ -265,11 +269,6 @@ class NL_FTOCP(object):
             # Collision avoidance constraint
             for p in pairs:
                 opti.subject_to(ca.norm_2(x[p[0]*self.n_x:p[0]*self.n_x+2,i] - x[p[1]*self.n_x:p[1]*self.n_x+2,i]) >= 2*self.r)
-
-            if i < N-1:
-                for j in range(self.n_a):
-                    opti.subject_to(opti.bounded(ddf_lim[0]*self.dt, u[j*self.n_u+0,i+1]-u[j*self.n_u+0,i], ddf_lim[1]*self.dt))
-                    opti.subject_to(opti.bounded(da_lim[0]*self.dt, u[j*self.n_u+1,i+1]-u[j*self.n_u+1,i], da_lim[1]*self.dt))
 
         opti.subject_to(x[:,N] - x_ss == slack)
 
@@ -292,10 +291,14 @@ class NL_FTOCP(object):
         sol = opti.solve()
 
         slack_val = sol.value(slack)
-        if la.norm(slack_val) > 2e-8:
-            print('Warning! Solved, but with slack norm of %g is greater than 2e-8!' % la.norm(slack_val))
+        slack_valid = True
+        for j in range(self.n_a):
+            if la.norm(slack_val[j*self.n_x:(j+1)*self.n_x]) > 2e-8:
+                slack_valid = False
+                print('Warning! Solved, but with agent %i slack norm of %g is greater than 2e-8!' % (j+1, la.norm(slack_val[j*self.n_x:(j+1)*self.n_x])))
+                break
 
-        if sol.stats()['success'] and la.norm(slack_val) <= 2e-8:
+        if sol.stats()['success'] and slack_valid:
             feasible = True
 
             x_pred = sol.value(x)
