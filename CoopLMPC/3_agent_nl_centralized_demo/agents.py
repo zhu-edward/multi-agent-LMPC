@@ -171,7 +171,7 @@ class Centralized_DT_Kin_Bike_Agent(Centralized_DT_Kin_Bike_Model):
 			self.g = np.tile(g, n_a)
 		else:
 			self.H = None
-			self.b = None
+			self.g = None
 
 	def get_jacobians(self, x, u, eps):
 	   # A, B, c = self.get_numerical_jacs(x, u, eps)

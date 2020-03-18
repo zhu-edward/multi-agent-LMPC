@@ -55,7 +55,7 @@ class NL_LMPC(object):
 	Add state trajectory and input sequence to the set of candidate points for safe set creation
 	"""
 	def addTrajectory(self, x, u, x_f):
-		print(x.shape)
+		# print(x.shape)
 
 		# Add the feasible trajectory x and the associated input sequence u to the safe set
 		self.x_cls.append(copy.copy(x))
@@ -109,12 +109,12 @@ class NL_LMPC(object):
 			Qfun = self.Qfun_t[0]
 			idxs = self.idxs_t[0]
 		else:
-			# SS = self.SS_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
-			# Qfun = self.Qfun_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
-			# idxs = self.idxs_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
-			SS = self.SS_t[min(ts, self.traj_lens[-1]-1)]
-			Qfun = self.Qfun_t[min(ts, self.traj_lens[-1]-1)]
-			idxs = self.idxs_t[min(ts, self.traj_lens[-1]-1)]
+			SS = self.SS_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
+			Qfun = self.Qfun_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
+			idxs = self.idxs_t[min(ts+self.ftocp_N, self.traj_lens[-1]-1)]
+			# SS = self.SS_t[min(ts, self.traj_lens[-1]-1)]
+			# Qfun = self.Qfun_t[min(ts, self.traj_lens[-1]-1)]
+			# idxs = self.idxs_t[min(ts, self.traj_lens[-1]-1)]
 		expl_con = None
 
 		cost_cands = []

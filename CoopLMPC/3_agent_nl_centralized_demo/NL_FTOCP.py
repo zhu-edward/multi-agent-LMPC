@@ -213,10 +213,6 @@ class NL_FTOCP(object):
             u_pred = None
             cost_val = None
 
-            # pdb.set_trace()
-
-        # pdb.set_trace()
-
         return x_pred, u_pred, cost_val
 
     def solve_opti(self, abs_t, x_0, x_ss, N, last_u, x_guess=None, u_guess=None, expl_constraints=None, verbose=False):

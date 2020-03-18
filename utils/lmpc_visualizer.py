@@ -116,7 +116,7 @@ class lmpc_visualizer(object):
 
 	def close_figure(self):
 		plt.close(self.fig)
-		
+
 	def update_prev_trajs(self, state_traj, act_traj=None):
 		# state_traj is a list of numpy arrays. Each numpy array is the closed-loop trajectory of an agent.
 		if state_traj is not None:
@@ -203,7 +203,7 @@ class lmpc_visualizer(object):
 					self.prev_traj_ts[i].set_data(range(l), self.prev_state_cl[self.agent_id][plot_idx,:])
 					a.set_xlim([0, l+1])
 				if SS is not None:
-					self.ss_ts[i].set_data(range(t+pred_len, t+pred_len+SS.shape[1]), SS[plot_idx,:])
+					self.ss_ts[i].set_data(range(t, t+SS.shape[1]), SS[plot_idx,:])
 				self.pred_ts[i].set_data(range(t, t+pred_len), state_preds[plot_idx,:])
 				self.curr_traj_ts[i].set_data(range(cl_len-1), state_cl[plot_idx,:-1])
 				a.relim()

@@ -179,7 +179,7 @@ def solve_lmpc_cent(lmpc, x_0, x_f, model_agent, verbose=False, visualizer=None,
 
 		if visualizer is not None:
 			for i in range(n_a):
-				visualizer[i].plot_traj(xcl[i*n_x:(i+1)*n_x,:], ucl[i*n_u:(i+1)*n_u,:], x_pred[i*n_x:(i+1)*n_x,:], u_pred[i*n_u:(i+1)*n_u,:], t, shade=False)
+				visualizer[i].plot_traj(xcl[i*n_x:(i+1)*n_x,:], ucl[i*n_u:(i+1)*n_u,:], x_pred[i*n_x:(i+1)*n_x,:], u_pred[i*n_u:(i+1)*n_u,:], t, SS=SS[i*n_x:(i+1)*n_x,:], shade=False)
 
 		for i in range(n_a):
 			if la.norm(x_tp1[i*n_x:(i+1)*n_x]-x_f[i*n_x:(i+1)*n_x], ord=2) > 10**tol:
