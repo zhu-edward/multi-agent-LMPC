@@ -3,6 +3,8 @@
 *.pkl
 *.npz
 .ipynb_checkpoints
+*.mp4
+*.zip
 Notebooks
 plots
 out

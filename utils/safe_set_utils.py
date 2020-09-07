@@ -346,7 +346,14 @@ def get_safe_set_2(x_cls, agents, des_num_ts='all', des_num_iters='all'):
 					it_start += 1
 					if it_start >= num_iters:
 						it_start = max(0, num_iters-des_num_iters)
-						ts_end -= 1
+						# ts_end -= 1
+						# ts_end -= 10
+						if ts_end-t <= 15:
+							ts_end = max(t+1, ts_end-1)
+						elif ts_end-t <= 30 and ts_end-t > 15:
+							ts_end -= 5
+						else:
+							ts_end -= 10
 
 					# Update the time step when a range reduction was last required, we will use this at the end to iterate through
 					# the safe sets up to this time and make sure that all safe sets use the same iteration and time range
@@ -488,7 +495,7 @@ def get_safe_set_cent(x_cls, des_num_ts='all', des_num_iters='all'):
 	for t in range(num_ts):
 		ts_end = t + des_num_ts
 		print('Constructing safe set from iteration %i to %i and time %i to %i' % (it_start, num_iters-1, t, ts_end-1))
-		
+
 		ts_range = []
 		for i in range(len(it_range)):
 			ts_range.append(range(min(t, cl_lens[i]-1), min(ts_end, cl_lens[i])))
