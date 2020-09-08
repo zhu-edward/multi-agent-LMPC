@@ -46,6 +46,7 @@ def solve_init_traj(ftocp, x_0, model_agent, agt_idx, agt_trajs, visualizer=None
 	waypt_idx = ftocp.get_reference_idx()
 
 	ftocp.build_opti_solver(agt_idx)
+	ftocp.build_opti0_solver(agt_idx)
 
 	t = 0
 	counter = 0
@@ -53,7 +54,7 @@ def solve_init_traj(ftocp, x_0, model_agent, agt_idx, agt_trajs, visualizer=None
 
 	x_guess = np.zeros((n_x, ftocp.N+1))
 	u_guess = np.zeros((n_u, ftocp.N))
-	u_t = np.zeros(n_u)
+	# u_t = np.zeros(n_u)
 
 	if visualizer is not None:
 		th = np.linspace(0, 2*np.pi, 100)
@@ -66,18 +67,26 @@ def solve_init_traj(ftocp, x_0, model_agent, agt_idx, agt_trajs, visualizer=None
 		if counter >= timeout:
 			print('Timeout reached, stopping...')
 			break
-		x_t = xcl_feas[-1] # Read measurements
 
 		if np.mod(counter, n_control) == 0:
-			x_pred, u_pred, feas = ftocp.solve_opti(x_t, u_t, agt_trajs, x_guess=x_guess, u_guess=u_guess, verbose=False)
+			if t == 0:
+				x_pred, u_pred, feas = ftocp.solve_opti0(counter, x_0, agt_trajs, x_guess=x_guess, u_guess=u_guess, verbose=False)
+			else:
+				x_t = xcl_feas[-1] # Read measurements
+				x_pred, u_pred, feas = ftocp.solve_opti(counter, x_t, u_t, agt_trajs, x_guess=x_guess, u_guess=u_guess, verbose=False)
+
+			if not feas:
+				xcl_feas = None
+				ucl_feas = None
+				success = False
+				return xcl_feas, ucl_feas, success
+
+			if t == 0:
+				xcl_feas = [x_pred[:,0]]
+				x_t = x_pred[:,0]
+
 			u_t = u_pred[:,0]
 			print('t: %g, d: %g, x: %g, y: %g, phi: %g, v: %g' % (t, la.norm(x_t[:2] - waypts[waypt_idx][:2]), x_t[0], x_t[1], x_t[2]*180.0/np.pi, x_t[3]))
-
-		if not feas:
-			xcl_feas = None
-			ucl_feas = None
-			success = False
-			return xcl_feas, ucl_feas, success
 
 		# Read input and apply it to the system
 		x_tp1 = model_agent.sim(x_t, u_t)
@@ -200,7 +209,7 @@ def main():
 	model_dt = 0.1
 	control_dt = 0.1
 
-	n_a = 10 # Number of agents
+	n_a = 8 # Number of agents
 	n_x = 4 # State dimension
 	n_u = 2 # Input dimension
 
@@ -222,7 +231,7 @@ def main():
 			# ====================================================================================
 
 			# Random initial conditions
-			# x_0 = [np.nan*np.ones((n_x, 1)) for _ in range(n_a)]
+			x_0 = [np.nan*np.ones((n_x, 1)) for _ in range(n_a)]
 			# agt_idx = 0
 			# while agt_idx < n_a:
 			# 	rand_conf = np.multiply(np.random.uniform(size=(3,)),(np.array([9, 9, 2*np.pi])-np.array([-9, -9, 0]))) + np.array([-9, -9, 0])
@@ -236,16 +245,16 @@ def main():
 			# 		x_0[agt_idx] = np.append(rand_conf, 0)
 			# 		agt_idx += 1
 
-			x_0 = [np.array([-9,9,-np.pi/4,0]),
-				np.array([5,7.5,-np.pi/2,0]),
-				np.array([8,-9,-3*np.pi/4,0]),
-				np.array([1,-5,np.pi,0]),
-				np.array([-0.5,0.5,-np.pi/4,0]),
-				np.array([-4,5,-3*np.pi/4,0]),
-				np.array([-9,-1,0,0]),
-				np.array([8,0,-np.pi/2,0]),
-				np.array([-6,-7,np.pi/4,0]),
-				np.array([-1,-9,3*np.pi/4,0])]
+			# x_0 = [np.array([-9,9,-np.pi/4,0]),
+			# 	np.array([5,7.5,-np.pi/2,0]),
+			# 	np.array([8,-9,-3*np.pi/4,0]),
+			# 	np.array([1,-5,np.pi,0]),
+			# 	np.array([-0.5,0.5,-np.pi/4,0]),
+			# 	np.array([-4,5,-3*np.pi/4,0]),
+			# 	np.array([-9,-1,0,0]),
+			# 	np.array([8,0,-3*np.pi/4,0]),
+			# 	np.array([-6,-7,np.pi/4,0]),
+			# 	np.array([-1,-9,3*np.pi/4,0])]
 
 			# Goal conditions (these will be updated once the initial trajectories are found)
 			x_f = [np.nan*np.ones((n_x, 1)) for _ in range(n_a)]
@@ -265,7 +274,7 @@ def main():
 			# R = np.diag([100.0, 50.0])
 			# Rd = np.diag([100.0, 50.0])
 			P = Q
-			N = 30
+			N = 50
 
 			if Q.shape[0] != Q.shape[1] or len(np.diag(Q)) != n_x:
 				raise(ValueError('Q matrix not shaped properly'))
@@ -278,23 +287,23 @@ def main():
 			while agt_idx < n_a:
 				while True:
 					coll_free = True
-					rand_conf = np.multiply(np.random.uniform(size=(3,)),(np.array([9, 9, 2*np.pi])-np.array([-9, -9, 0]))) + np.array([-9, -9, 0])
-					if la.norm(rand_conf[:2]-x_0[agt_idx][:2]) < 3.0:
+					rand_conf_0 = np.multiply(np.random.uniform(size=(3,)),(np.array([9, 9, 2*np.pi])-np.array([-9, -9, 0]))) + np.array([-9, -9, 0])
+					rand_conf_f = np.multiply(np.random.uniform(size=(3,)),(np.array([9, 9, 2*np.pi])-np.array([-9, -9, 0]))) + np.array([-9, -9, 0])
+					if la.norm(rand_conf_f[:2]-rand_conf_0[:2]) < 5.0:
 						continue
-					for i in range(n_a):
+					for i in range(agt_idx):
 						d = model_agents[i].get_collision_buff_r()+model_agents[agt_idx].get_collision_buff_r()
-						if la.norm(rand_conf[:2]-x_f[i][:2]) < d and i < agt_idx:
-							coll_free = False
-							break
-						if la.norm(rand_conf[:2]-x_0[i][:2]) < d:
+						if la.norm(rand_conf_f[:2]-x_0[i][:2]) < 1.5*d or la.norm(rand_conf_f[:2]-x_f[i][:2]) < 1.5*d \
+							or la.norm(rand_conf_0[:2]-x_0[i][:2]) < 1.5*d or la.norm(rand_conf_0[:2]-x_f[i][:2]) < 1.5*d:
 							coll_free = False
 							break
 
 					if coll_free:
-						x_f[agt_idx] = np.append(rand_conf, 0)
+						x_f[agt_idx] = np.append(rand_conf_f, 0)
+						x_0[agt_idx] = np.append(rand_conf_0, 0)
 						break
 
-				mpc_agent = DT_Kin_Bike_Agent(l_r, l_f, w, control_dt, col_buf=col_buf[agt_idx], v_lim=[-2.0, 2.0], a_lim=[-1.0, 1.0], df_lim=[-0.5, 0.5], da_lim=[-1.5, 1.5], ddf_lim=[-0.3, 0.3])
+				mpc_agent = DT_Kin_Bike_Agent(l_r, l_f, w, control_dt, col_buf=col_buf[agt_idx], v_lim=[-2.0, 2.0], a_lim=[-1.0, 1.0], df_lim=[-0.35, 0.35], da_lim=[-3.0, 3.0], ddf_lim=[-0.5, 0.5])
 				# ocp = LTV_FTOCP(Q, P, R, Rd, N, mpc_agent, x_refs=[x_f[agt_idx]])
 				ocp = init_FTOCP(Q, P, R, Rd, N, mpc_agent, x_refs=[x_f[agt_idx]])
 				vis = lmpc_visualizer(pos_dims=[0,1], n_state_dims=n_x, n_act_dims=n_u, agent_id=agt_idx, n_agents=n_a, plot_lims=plot_lims)
@@ -304,7 +313,10 @@ def main():
 				if success:
 					xcl_feas.append(x)
 					ucl_feas.append(u)
+
+					x_0[agt_idx] = x[:,0]
 					x_f[agt_idx] = x[:,-1]
+
 					agt_idx += 1
 
 				vis.close_figure()
@@ -341,23 +353,17 @@ def main():
 		xcl_lens = [xcl_feas[i].shape[1] for i in range(n_a)]
 
 		# for i in range(1,n_a):
-		# 	print('Padding trajectory for agent %i' % i)
-		# 	counter = 0
-		# 	while True:
-		# 		before_len = 25*counter
-		# 		cand_x_traj = np.hstack((np.tile(x_0[i].reshape((-1,1)), before_len), xcl_feas[i]))
-		# 		collision = utils.utils.check_traj_collisions(cand_x_traj, i, xcl_feas[:i], model_agents)
-		# 		if not collision:
-		# 			xcl_feas[i] = cand_x_traj
-		# 			ucl_feas[i] = np.hstack((np.zeros((n_u, before_len)), ucl_feas[i]))
-		# 			break
-		# 		counter += 1
-
-		# for i in range(n_a):
-		# 	before_len = 50*i
+		# 	print('Padding trajectory for agent %i' % (i+1))
+		# 	collision_time = -1
+		# 	while not np.isinf(collision_time):
+		# 		collision_time = utils.utils.check_traj_collisions(xcl_feas[i], i, xcl_feas[:i], model_agents)
 		#
-		# 	xcl_feas[i] = np.hstack((np.tile(x_0[i].reshape((-1,1)), before_len), xcl_feas[i]))
-		# 	ucl_feas[i] = np.hstack((np.zeros((n_u, before_len)), ucl_feas[i]))
+		# 		if not np.isinf(collision_time):
+		# 			before_len = collision_time+1
+		# 			xcl_feas[i] = np.hstack((np.tile(x_0[i].reshape((-1,1)), before_len), xcl_feas[i]))
+
+			# plot_bike_agent_trajs(xcl_feas, ucl_feas, model_agents, model_dt, trail=True, plot_lims=plot_lims, it=0)
+			# pdb.set_trace()
 
 		if plot_init:
 			plot_bike_agent_trajs(xcl_feas, ucl_feas, model_agents, model_dt, trail=True, plot_lims=plot_lims, it=0)

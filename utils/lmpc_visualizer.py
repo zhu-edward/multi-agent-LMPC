@@ -46,7 +46,7 @@ class lmpc_visualizer(object):
 			self.prev_pos.append(p)
 
 		self.pred_xy = []
-		for i in range(50):
+		for i in range(60):
 			pr, = self.pos_ax.plot(x_data, y_data, 'o', markersize=2)
 			self.pred_xy.append(pr)
 
@@ -63,6 +63,7 @@ class lmpc_visualizer(object):
 			self.pos_ax.set_ylim(self.plot_lims[1])
 		self.pos_ax.set_xlabel('$x$')
 		self.pos_ax.set_ylabel('$y$')
+		self.pos_ax.set_aspect('equal')
 
 		# Initialize timeseries plot
 		self.ts_axs = [self.fig.add_axes([0.58, 0.03+i*1.0/(n_state_dims+n_act_dims-2), 0.4, 1.0/(n_state_dims+n_act_dims-2)-0.05]) for i in range(n_act_dims+n_state_dims-2)]

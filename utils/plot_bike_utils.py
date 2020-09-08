@@ -90,11 +90,11 @@ def plot_bike_agent_trajs(x, u, agents, dt, trail=False, shade=False, plot_lims=
 			if not end_flags[i]:
 				psi_lines[i].set_data(dt*np.arange(min(t+1, traj_lens[i]-1)), x[i][2,:min(t+1, traj_lens[i]-1)])
 				v_lines[i].set_data(dt*np.arange(min(t+1, traj_lens[i]-1)), x[i][3,:min(t+1, traj_lens[i]-1)])
-				df_lines[i].set_data(dt*np.arange(min(t+1, traj_lens[i]-1)), u[i][0,:min(t+1, traj_lens[i]-1)])
-				a_lines[i].set_data(dt*np.arange(min(t+1, traj_lens[i]-1)), u[i][1,:min(t+1, traj_lens[i]-1)])
+				df_lines[i].set_data(dt*np.arange(min(t+1, traj_lens[i]-2)), u[i][0,:min(t+1, traj_lens[i]-2)])
+				a_lines[i].set_data(dt*np.arange(min(t+1, traj_lens[i]-2)), u[i][1,:min(t+1, traj_lens[i]-2)])
 
 				x_t = x[i][:,min(t, traj_lens[i]-1)]
-				u_t = u[i][:,min(t, traj_lens[i]-1)]
+				u_t = u[i][:,min(t, traj_lens[i]-2)]
 				l_f = agents[i].l_f
 				l_r = agents[i].l_r
 				w = agents[i].w

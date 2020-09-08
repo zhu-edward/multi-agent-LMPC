@@ -92,35 +92,40 @@ class init_FTOCP(object):
             self.input_rate_lb += [-1000.0]
             self.input_rate_ub += [1000.0]
 
-        self.cost = None
-        self.opti = None
         self.x_refs_idx = 0
         if x_refs is not None:
             self.x_refs = x_refs
         else:
             self.x_refs = [np.zeros(self.n_x)]
 
-        self.agt_x0 = []
-        self.agt_xf = []
-        self.x_0 = None
+        self.cost = None
+        self.opti = None
+        self.agt_x = []
+        self.x_s = None
         self.x_f = None
         self.x = None
         self.u = None
+
+        self.opti0 = None
+        self.cost0 = None
+        self.agt_x0 = []
+        self.x_s0 = None
+        self.x_f0 = None
+        self.x0 = None
+        self.u0 = None
 
     def build_opti_solver(self, agt_idx):
         self.opti = ca.Opti()
 
         self.x = self.opti.variable(self.n_x, self.N+1)
         self.u = self.opti.variable(self.n_u, self.N)
-        self.x_0 = self.opti.parameter(self.n_x)
+        self.x_s = self.opti.parameter(self.n_x)
         self.x_f = self.opti.parameter(self.n_x)
         self.last_u = self.opti.parameter(self.n_u)
 
-        self.agt_x0 = []
-        self.agt_xf = []
+        self.agt_x = []
         for i in range(agt_idx):
-            self.agt_x0.append(self.opti.parameter(self.n_x))
-            self.agt_xf.append(self.opti.parameter(self.n_x))
+            self.agt_x.append(self.opti.parameter(self.n_x, self.N+1))
 
         self.opti.set_value(self.x_f, self.x_refs[self.x_refs_idx])
 
@@ -128,7 +133,7 @@ class init_FTOCP(object):
         ddf_lim = self.agent.ddf_lim
         r = self.agent.r
 
-        self.opti.subject_to(self.x[:,0] == self.x_0)
+        self.opti.subject_to(self.x[:,0] == self.x_s)
         self.opti.subject_to(self.opti.bounded(ddf_lim[0]*self.dt, self.u[0,0]-self.last_u[0], ddf_lim[1]*self.dt))
         self.opti.subject_to(self.opti.bounded(da_lim[0]*self.dt, self.u[1,0]-self.last_u[1], da_lim[1]*self.dt))
 
@@ -149,8 +154,7 @@ class init_FTOCP(object):
 
             # Treat init and final states of agents before as obstacles
             for j in range(agt_idx):
-                self.opti.subject_to(ca.bilin(np.eye(2), self.x[:2,i+1]-self.agt_x0[j][:2], self.x[:2,i+1]-self.agt_x0[j][:2]) >= (2*r)**2)
-                self.opti.subject_to(ca.bilin(np.eye(2), self.x[:2,i+1]-self.agt_xf[j][:2], self.x[:2,i+1]-self.agt_xf[j][:2]) >= (2*r)**2)
+                self.opti.subject_to(ca.bilin(np.eye(2), self.x[:2,i+1]-self.agt_x[j][:2,i+1], self.x[:2,i+1]-self.agt_x[j][:2,i+1]) >= (1.5*2*r)**2)
 
             if i < self.N-1:
                 stage_cost += ca.bilin(self.Rd, self.u[:,i+1]-self.u[:,i], self.u[:,i+1]-self.u[:,i])
@@ -172,45 +176,124 @@ class init_FTOCP(object):
         plugin_opts = {"verbose" : False, "print_time" : False, "print_out" : False}
         self.opti.solver('ipopt', plugin_opts, solver_opts)
 
-    def solve_opti(self, x_0, last_u, agt_trajs, x_guess=None, u_guess=None, verbose=False):
+    def build_opti0_solver(self, agt_idx):
+        self.opti0 = ca.Opti()
+
+        self.x0 = self.opti0.variable(self.n_x, self.N+1)
+        self.u0 = self.opti0.variable(self.n_u, self.N)
+        self.x_s0 = self.opti0.parameter(self.n_x)
+        self.x_f0 = self.opti0.parameter(self.n_x)
+
+        self.agt_x0 = []
+        for i in range(agt_idx):
+            self.agt_x0.append(self.opti0.parameter(self.n_x, self.N+1))
+
+        self.opti0.set_value(self.x_f0, self.x_refs[self.x_refs_idx])
+
+        da_lim = self.agent.da_lim
+        ddf_lim = self.agent.ddf_lim
+        r = self.agent.r
+
+        self.opti0.subject_to(self.x0[0,0] == self.x_s0[0])
+        self.opti0.subject_to(self.x0[1,0] == self.x_s0[1])
+        self.opti0.subject_to(self.opti0.bounded(0, self.x0[2,0], 2*np.pi))
+        self.opti0.subject_to(self.x0[3,0] == self.x_s0[3])
+
+        stage_cost = 0
+        for i in range(self.N):
+            stage_cost += ca.bilin(self.Q, self.x0[:,i+1]-self.x_f0, self.x0[:,i+1]-self.x_f0) + ca.bilin(self.R, self.u0[:,i], self.u0[:,i])
+
+            beta = ca.atan2(self.l_r*ca.tan(self.u0[0,i]), self.l_f+self.l_r)
+            self.opti0.subject_to(self.x0[0,i+1] == self.x0[0,i] + self.dt*self.x0[3,i]*ca.cos(self.x0[2,i] + beta))
+            self.opti0.subject_to(self.x0[1,i+1] == self.x0[1,i] + self.dt*self.x0[3,i]*ca.sin(self.x0[2,i] + beta))
+            self.opti0.subject_to(self.x0[2,i+1] == self.x0[2,i] + self.dt*self.x0[3,i]*ca.sin(beta))
+            self.opti0.subject_to(self.x0[3,i+1] == self.x0[3,i] + self.dt*self.u0[1,i])
+
+            if self.F is not None:
+                self.opti0.subject_to(ca.mtimes(self.F, self.x0[:,i+1]) <= self.b)
+            if self.H is not None:
+                self.opti0.subject_to(ca.mtimes(self.H, self.u0[:,i]) <= self.g)
+
+            # Treat init and final states of agents before as obstacles
+            for j in range(agt_idx):
+                self.opti0.subject_to(ca.bilin(np.eye(2), self.x0[:2,i+1]-self.agt_x0[j][:2,i+1], self.x0[:2,i+1]-self.agt_x0[j][:2,i+1]) >= (1.5*2*r)**2)
+
+            if i < self.N-1:
+                stage_cost += ca.bilin(self.Rd, self.u0[:,i+1]-self.u0[:,i], self.u0[:,i+1]-self.u0[:,i])
+                self.opti0.subject_to(self.opti0.bounded(ddf_lim[0]*self.dt, self.u0[0,i+1]-self.u0[0,i], ddf_lim[1]*self.dt))
+                self.opti0.subject_to(self.opti0.bounded(da_lim[0]*self.dt, self.u0[1,i+1]-self.u0[1,i], da_lim[1]*self.dt))
+
+        self.cost0 = stage_cost
+        self.opti0.minimize(self.cost0)
+
+        solver_opts = {
+            "mu_strategy" : "adaptive",
+            "mu_init" : 1e-5,
+            "mu_min" : 1e-15,
+            "barrier_tol_factor" : 1,
+            "print_level" : 0,
+            "linear_solver" : "ma27"
+            }
+        # solver_opts = {}
+        plugin_opts = {"verbose" : False, "print_time" : False, "print_out" : False}
+        self.opti0.solver('ipopt', plugin_opts, solver_opts)
+
+    def solve_opti(self, k, x_0, last_u, agt_trajs, x_guess=None, u_guess=None, verbose=False):
         if x_guess is not None:
             self.opti.set_initial(self.x, x_guess)
         if u_guess is not None:
             self.opti.set_initial(self.u, u_guess)
 
         self.opti.set_value(self.last_u, last_u)
-        self.opti.set_value(self.x_0, x_0)
+        self.opti.set_value(self.x_s, x_0)
 
-        for i in range(len(self.agt_x0)):
-            self.opti.set_value(self.agt_x0[i], agt_trajs[i][:,0])
-            self.opti.set_value(self.agt_xf[i], agt_trajs[i][:,-1])
+        for i in range(len(self.agt_x)):
+            if k < agt_trajs[i].shape[1]-1:
+                traj = agt_trajs[i][:,k:min(k+self.N+1,agt_trajs[i].shape[1])]
+                if traj.shape[1] < self.N+1:
+                    traj = np.hstack((traj, np.tile(traj[:,-1].reshape((-1,1)), (self.N+1-traj.shape[1]))))
+            else:
+                traj = np.tile(agt_trajs[i][:,-1].reshape((-1,1)), (self.N+1))
+            self.opti.set_value(self.agt_x[i], traj)
 
         try:
             sol = self.opti.solve()
-        except:
-            print(self.opti.stats()['return_status'])
-            feasible = False
-            x_pred = None
-            u_pred = None
-            sol_cost = None
-
-        if sol.stats()['success']:
-            # print('Solve success')
             feasible = True
-
             x_pred = sol.value(self.x)
             u_pred = sol.value(self.u)
-            sol_cost = sol.value(self.cost)
-        else:
-            print(sol.stats()['return_status'])
-            # pdb.set_trace()
-            # print(opti.debug.show_infeasibilities())
-            feasible = False
-            x_pred = None
-            u_pred = None
-            sol_cost = None
+            return x_pred, u_pred, feasible
+        except:
+            print(self.opti.stats()['return_status'])
+            return None, None, False
 
-            # pdb.set_trace()
+        return x_pred, u_pred, feasible
+
+    def solve_opti0(self, k, x_0, agt_trajs, x_guess=None, u_guess=None, verbose=False):
+        if x_guess is not None:
+            self.opti0.set_initial(self.x0, x_guess)
+        if u_guess is not None:
+            self.opti0.set_initial(self.u0, u_guess)
+
+        self.opti0.set_value(self.x_s0, x_0)
+
+        for i in range(len(self.agt_x0)):
+            if k < agt_trajs[i].shape[1]-1:
+                traj = agt_trajs[i][:,k:min(k+self.N+1,agt_trajs[i].shape[1])]
+                if traj.shape[1] < self.N+1:
+                    traj = np.hstack((traj, np.tile(agt_trajs[i][:,-1].reshape((-1,1)), (self.N+1-traj.shape[1]))))
+            else:
+                traj = np.tile(agt_trajs[i][:,-1].reshape((-1,1)), (self.N+1))
+            self.opti0.set_value(self.agt_x0[i], traj)
+
+        try:
+            sol = self.opti0.solve()
+            feasible = True
+            x_pred = sol.value(self.x0)
+            u_pred = sol.value(self.u0)
+            return x_pred, u_pred, feasible
+        except:
+            print(self.opti0.stats()['return_status'])
+            return None, None, False
 
         return x_pred, u_pred, feasible
 

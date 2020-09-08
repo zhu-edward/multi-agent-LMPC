@@ -223,13 +223,14 @@ def plot_svm_results(X, y, clf):
 	plt.show()
 
 def check_traj_collisions(traj, agt_idx, comp_trajs, agents):
-
+	coll_time = np.inf
 	for (i, ct) in enumerate(comp_trajs):
 		ct_len = ct.shape[1]
 		d = agents[i].get_collision_buff_r()+agents[agt_idx].get_collision_buff_r()
 		for j in range(traj.shape[1]):
 			if la.norm(traj[:2,j]-ct[:2,min(j,ct_len-1)]) < d:
 				# pdb.set_trace()
-				return True
+				if j < coll_time:
+					coll_time = j
 
-	return False
+	return coll_time

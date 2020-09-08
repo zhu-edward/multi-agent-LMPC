@@ -51,8 +51,8 @@ class CT_Kin_Bike_Agent(CT_Kin_Bike_Model):
 
 class DT_Kin_Bike_Agent(DT_Kin_Bike_Model):
 	def __init__(self, l_r, l_f, w, dt, col_buf=None,
-		a_lim=[-3.0, 3.0], df_lim=[-0.5, 0.5], x_lim=[-10.0, 10.0],
-		y_lim=[-10.0, 10.0], psi_lim=None, v_lim=[-10.0, 10.0],
+		a_lim=[-3.0, 3.0], df_lim=[-0.4, 0.4], x_lim=[-10.0, 10.0],
+		y_lim=[-10.0, 10.0], psi_lim=None, v_lim=[-5.0, 5.0],
 		da_lim=[-7.0, 7.0], ddf_lim=[-0.7, 0.7]):
 		super(DT_Kin_Bike_Agent, self).__init__(l_r, l_f, dt)
 

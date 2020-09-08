@@ -86,136 +86,19 @@ class NL_FTOCP(object):
             self.input_rate_lb += [-1000.0]
             self.input_rate_ub += [1000.0]
 
-        self.cost = []
+        self.cost = None
+        self.opti = None
+        self.x_s = None
+        self.x_f = None
+        self.x = None
+        self.u = None
 
-    def solve(self, abs_t, x_0, x_ss, N, last_u, x_guess=None, u_guess=None, expl_constraints=None, verbose=False):
-        x = ca.SX.sym('x', self.n_x*(N+1))
-        u = ca.SX.sym('y', self.n_u*N)
-        slack = ca.SX.sym('slack', self.n_x)
-
-        z = ca.vertcat(x, u, slack)
-
-        # Flatten candidate solutions into 1-D array (- x_1 -, - x_2 -, ..., - x_N+1 -)
-        if x_guess is not None:
-            x_guess_flat = x_guess.flatten(order='F')
-        else:
-            x_guess_flat = np.zeros(self.n_x*(N+1))
-
-        if u_guess is not None:
-            u_guess_flat = u_guess.flatten(order='F')
-        else:
-            u_guess_flat = np.zeros(self.n_u*N)
-        slack_guess = np.zeros(self.n_x)
-
-        z_guess = np.concatenate((x_guess_flat, u_guess_flat, slack_guess))
-
-        lb_slack = [-1000.0]*self.n_x
-        ub_slack = [1000.0]*self.n_x
-
-        # Box constraints on decision variables
-        lb_x = x_0.tolist() + self.state_lb*(N) + self.input_lb*(N) + lb_slack
-        ub_x = x_0.tolist() + self.state_ub*(N) + self.input_ub*(N) + ub_slack
-
-        # Constraints on functions of decision variables
-        lb_g = []
-        ub_g = []
-
-        stage_cost = 0
-        constraint = []
-        for i in range(N):
-            stage_cost += 1
-
-            # Formulate dynamics equality constraints as inequalities
-            beta = ca.atan2(self.l_r*ca.tan(u[self.n_u*i+0]), self.l_f+self.l_r)
-            constraint = ca.vertcat(constraint, x[self.n_x*(i+1)+0] - (x[self.n_x*i+0] + self.dt*x[self.n_x*i+3]*ca.cos(x[self.n_x*i+2] + beta)))
-            constraint = ca.vertcat(constraint, x[self.n_x*(i+1)+1] - (x[self.n_x*i+1] + self.dt*x[self.n_x*i+3]*ca.sin(x[self.n_x*i+2] + beta)))
-            constraint = ca.vertcat(constraint, x[self.n_x*(i+1)+2] - (x[self.n_x*i+2] + self.dt*x[self.n_x*i+3]*ca.sin(beta)))
-            constraint = ca.vertcat(constraint, x[self.n_x*(i+1)+3] - (x[self.n_x*i+3] + self.dt*u[self.n_u*i+1]))
-
-            lb_g += [0.0]*self.n_x
-            ub_g += [0.0]*self.n_x
-
-            # Steering rate constraints
-            if self.ddf_lim is not None:
-                if i == 0:
-                    # Constrain steering rate with respect to previously applied input
-                    constraint = ca.vertcat(constraint, u[self.n_u*(i)+0]-last_u[0])
-                if i < N-1:
-                    # Constrain steering rate along horizon
-                    constraint = ca.vertcat(constraint, u[self.n_u*(i+1)+0]-u[self.n_u*(i)+0])
-                lb_g += [self.ddf_lim[0]*self.dt]
-                ub_g += [self.ddf_lim[1]*self.dt]
-
-            # Throttle rate constraints
-            if self.da_lim is not None:
-                if i == 0:
-                    # Constrain throttle rate
-                    constraint = ca.vertcat(constraint, u[self.n_u*i+1]-last_u[1])
-                if i < N-1:
-                    constraint = ca.vertcat(constraint, u[self.n_u*(i+1)+1]-u[self.n_u*(i)+1])
-                lb_g += [self.da_lim[0]*self.dt]
-                ub_g += [self.da_lim[1]*self.dt]
-
-            # Exploration constraints on predicted positions of agent
-            if expl_constraints is not None:
-                V = expl_constraints[i][0]
-                w = expl_constraints[i][1]
-
-                for j in range(V.shape[0]):
-                    constraint = ca.vertcat(constraint, V[j,0]*x[self.n_x*i+0] + V[j,1]*x[self.n_x*i+1] + w[j])
-                    lb_g += [-1e9]
-                    ub_g += [0]
-
-        # Formulate terminal soft equality constraint as inequalities
-        constraint = ca.vertcat(constraint, x[self.n_x*N:] - x_ss + slack)
-        lb_g += [0.0]*self.n_x
-        ub_g += [0.0]*self.n_x
-
-        slack_cost = 1e6*ca.sumsqr(slack)
-        total_cost = stage_cost + slack_cost
-
-        opts = {'verbose' : False, 'print_time' : 0,
-            'ipopt.print_level' : 5,
-            'ipopt.mu_strategy' : 'adaptive',
-            'ipopt.mu_init' : 1e-5,
-            'ipopt.mu_min' : 1e-15,
-            'ipopt.barrier_tol_factor' : 1,
-            'ipopt.linear_solver': 'ma27'}
-        nlp = {'x' : z, 'f' : total_cost, 'g' : constraint}
-        solver = ca.nlpsol('solver', 'ipopt', nlp, opts)
-
-        sol = solver(lbx=lb_x, ubx=ub_x, lbg=lb_g, ubg=ub_g, x0=z_guess)
-
-        pdb.set_trace()
-
-        if solver.stats()['success']:
-            if la.norm(slack_val) <= 1e-8:
-                print('Solve success for safe set point', x_ss)
-                feasible = True
-
-                z_sol = np.array(sol['x'])
-                x_pred = z_sol[:self.n_x*(N+1)].reshape((N+1,self.n_x)).T
-                u_pred = z_sol[self.n_x*(N+1):self.n_x*(N+1)+self.n_u*N].reshape((N,self.n_u)).T
-                slack_val = z_sol[self.n_x*(N+1)+self.n_u*N:]
-                cost_val = sol['f']
-            else:
-                print('Warning! Solved, but with slack norm of %g is greater than 1e-8!' % la.norm(slack_val))
-                feasible = False
-                x_pred = None
-                u_pred = None
-                cost_val = None
-        else:
-            print(solver.stats()['return_status'])
-            feasible = False
-            x_pred = None
-            u_pred = None
-            cost_val = None
-
-            # pdb.set_trace()
-
-        # pdb.set_trace()
-
-        return x_pred, u_pred, cost_val
+        self.opti0 = None
+        self.cost0 = None
+        self.x_s0 = None
+        self.x_f0 = None
+        self.x0 = None
+        self.u0 = None
 
     def solve_opti(self, abs_t, x_0, x_ss, N, last_u, x_guess=None, u_guess=None, expl_constraints=None, verbose=False):
         opti = ca.Opti()
