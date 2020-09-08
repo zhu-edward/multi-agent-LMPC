@@ -181,7 +181,7 @@ def main():
 
 	# Initial Conditions arranged around circle
 	d_theta = 2*np.pi/(n_a);
-	x_0[i] = [np.array([7.0*np.cos(i*d_theta), 7.0*np.sin(i*d_theta), i*d_theta+np.pi, 0.0]) for i in range(n_a)]
+	x_0 = [np.array([7.0*np.cos(i*d_theta), 7.0*np.sin(i*d_theta), i*d_theta+np.pi, 0.0]) for i in range(n_a)]
 
 	# Random initial conditions
 	# x_0 = [np.nan*np.ones((n_x, 1)) for _ in range(n_a)]
