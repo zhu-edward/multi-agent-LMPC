@@ -288,8 +288,17 @@ def main():
 				while True:
 					coll_free = True
 					rand_conf_0 = np.multiply(np.random.uniform(size=(3,)),(np.array([9, 9, 2*np.pi])-np.array([-9, -9, 0]))) + np.array([-9, -9, 0])
+					# if rand_conf_0[0] >= 0 and rand_conf_0[1] >= 0:
+					# 	rand_conf_f = np.multiply(np.random.uniform(size=(3,)),(np.array([9, 9, 2*np.pi])-np.array([-9, -9, 0]))) + np.array([-9, -9, 0])
+					# elif rand_conf_0[0] <= 0 and rand_conf_0[1] >= 0:
+					# 	rand_conf_f = np.multiply(np.random.uniform(size=(3,)),(np.array([9, 9, 2*np.pi])-np.array([-9, -9, 0]))) + np.array([-9, -9, 0])
+					# elif rand_conf_0[0] <= 0 and rand_conf_0[1] <= 0:
+					# 	rand_conf_f = np.multiply(np.random.uniform(size=(3,)),(np.array([9, 9, 2*np.pi])-np.array([-9, -9, 0]))) + np.array([-9, -9, 0])
+					# else:
+					# 	rand_conf_f = np.multiply(np.random.uniform(size=(3,)),(np.array([9, 9, 2*np.pi])-np.array([-9, -9, 0]))) + np.array([-9, -9, 0])
+
 					rand_conf_f = np.multiply(np.random.uniform(size=(3,)),(np.array([9, 9, 2*np.pi])-np.array([-9, -9, 0]))) + np.array([-9, -9, 0])
-					if la.norm(rand_conf_f[:2]-rand_conf_0[:2]) < 5.0:
+					if la.norm(rand_conf_f[:2]-rand_conf_0[:2]) < 6.0:
 						continue
 					for i in range(agt_idx):
 						d = model_agents[i].get_collision_buff_r()+model_agents[agt_idx].get_collision_buff_r()
@@ -372,7 +381,7 @@ def main():
 		for i in range(n_a):
 			x_f[i] = xcl_feas[i][:,-1]
 
-	# pdb.set_trace()
+	pdb.set_trace()
 
 	# ====================================================================================
 
@@ -406,7 +415,7 @@ def main():
 	os.makedirs(exp_dir)
 
 	# Initialize visualizer for each agent
-	# lmpc_vis = [lmpc_visualizer(pos_dims=[0,1], n_state_dims=n_x, n_act_dims=n_u, agent_id=i, n_agents=n_a, plot_lims=plot_lims) for i in range(n_a)]
+	lmpc_vis = [lmpc_visualizer(pos_dims=[0,1], n_state_dims=n_x, n_act_dims=n_u, agent_id=i, n_agents=n_a, plot_lims=plot_lims) for i in range(n_a)]
 	# lmpc_vis = None
 
 	it_times = []
@@ -423,7 +432,7 @@ def main():
 
 		plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, save_video=True, it=it)
 
-		pdb.set_trace()
+		# pdb.set_trace()
 		it_start = time.time()
 
 		# Compute safe sets and exploration spaces along previous trajectory

@@ -186,3 +186,88 @@ class NL_FTOCP(object):
             # pdb.set_trace()
 
         return x_pred, u_pred, sol_cost
+
+    def solve_opti0(self, abs_t, x_0, x_ss, N, x_guess=None, u_guess=None, expl_constraints=None, verbose=False):
+        opti = ca.Opti()
+
+        x = opti.variable(self.n_x, N+1)
+        u = opti.variable(self.n_u, N)
+        slack = opti.variable(self.n_x)
+
+        if x_guess is not None:
+            opti.set_initial(x, x_guess)
+        if u_guess is not None:
+            opti.set_initial(u, u_guess)
+        opti.set_initial(slack, np.zeros(self.n_x))
+
+        da_lim = self.agent.da_lim
+        ddf_lim = self.agent.ddf_lim
+
+        opti.subject_to(x[:,0] == np.squeeze(x_0))
+
+        stage_cost = 0
+        for i in range(N):
+            stage_cost = stage_cost + 1
+
+            beta = ca.atan2(self.l_r*ca.tan(u[0,i]), self.l_f+self.l_r)
+            opti.subject_to(x[0,i+1] == x[0,i] + self.dt*x[3,i]*ca.cos(x[2,i] + beta))
+            opti.subject_to(x[1,i+1] == x[1,i] + self.dt*x[3,i]*ca.sin(x[2,i] + beta))
+            opti.subject_to(x[2,i+1] == x[2,i] + self.dt*x[3,i]*ca.sin(beta))
+            opti.subject_to(x[3,i+1] == x[3,i] + self.dt*u[1,i])
+
+            if self.F is not None:
+                opti.subject_to(ca.mtimes(self.F, x[:,i]) <= self.b)
+            if self.H is not None:
+                opti.subject_to(ca.mtimes(self.H, u[:,i]) <= self.g)
+
+            if expl_constraints is not None:
+                V = expl_constraints[i][0]
+                w = expl_constraints[i][1]
+                opti.subject_to(ca.mtimes(V, x[:2,i]) + w <= np.zeros(len(w)))
+
+            if i < N-1:
+                opti.subject_to(opti.bounded(ddf_lim[0]*self.dt, u[0,i+1]-u[0,i], ddf_lim[1]*self.dt))
+                opti.subject_to(opti.bounded(da_lim[0]*self.dt, u[1,i+1]-u[1,i], da_lim[1]*self.dt))
+
+        opti.subject_to(x[:,N] - x_ss == slack)
+
+        slack_cost = 1e6*ca.sumsqr(slack)
+        total_cost = stage_cost + slack_cost
+        opti.minimize(total_cost)
+
+        solver_opts = {
+            "mu_strategy" : "adaptive",
+            "mu_init" : 1e-5,
+            "mu_min" : 1e-15,
+            "barrier_tol_factor" : 1,
+            "print_level" : 0,
+            "linear_solver" : "ma27"
+            }
+        # solver_opts = {}
+        plugin_opts = {"verbose" : False, "print_time" : False, "print_out" : False}
+        opti.solver('ipopt', plugin_opts, solver_opts)
+
+        sol = opti.solve()
+
+        slack_val = sol.value(slack)
+        if la.norm(slack_val) > 1e-6:
+            print('Warning! Solved, but with slack norm of %g is greater than 1e-8!' % la.norm(slack_val))
+
+        if sol.stats()['success'] and la.norm(slack_val) <= 1e-6:
+            print('Solve success, with slack norm of %g!' % la.norm(slack_val))
+            feasible = True
+
+            x_pred = sol.value(x)
+            u_pred = sol.value(u)
+            sol_cost = sol.value(stage_cost)
+        else:
+            # print(sol.stats()['return_status'])
+            # print(opti.debug.show_infeasibilities())
+            feasible = False
+            x_pred = None
+            u_pred = None
+            sol_cost = None
+
+            # pdb.set_trace()
+
+        return x_pred, u_pred, sol_cost

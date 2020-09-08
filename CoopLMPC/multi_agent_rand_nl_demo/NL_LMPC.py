@@ -166,11 +166,18 @@ class NL_LMPC(object):
 			if self.ftocp_N > 1:
 				if self.ftocp_N + term_cost <= self.last_cost:
 				# if True:
-					x_pred, u_pred, cost = self.ftocp.solve_opti(ts, x_t, x_ss, self.ftocp_N, last_u,
-						x_guess=x_guess,
-						u_guess=u_guess,
-						expl_constraints=expl_con,
-						verbose=verbose)
+					if ts == 0:
+						x_pred, u_pred, cost = self.ftocp.solve_opti0(ts, x_t, x_ss, self.ftocp_N,
+							x_guess=x_guess,
+							u_guess=u_guess,
+							expl_constraints=expl_con,
+							verbose=verbose)
+					else:
+						x_pred, u_pred, cost = self.ftocp.solve_opti(ts, x_t, x_ss, self.ftocp_N, last_u,
+							x_guess=x_guess,
+							u_guess=u_guess,
+							expl_constraints=expl_con,
+							verbose=verbose)
 					# x_pred, u_pred, cost = self.ftocp.solve(ts, x_t, x_ss, self.ftocp_N, last_u,
 					# 	x_guess=x_guess,
 					# 	u_guess=u_guess,
