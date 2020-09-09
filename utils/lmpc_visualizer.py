@@ -46,7 +46,7 @@ class lmpc_visualizer(object):
 			self.prev_pos.append(p)
 
 		self.pred_xy = []
-		for i in range(60):
+		for i in range(70):
 			pr, = self.pos_ax.plot(x_data, y_data, 'o', markersize=2)
 			self.pred_xy.append(pr)
 
