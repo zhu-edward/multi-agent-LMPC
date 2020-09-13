@@ -196,7 +196,8 @@ class init_FTOCP(object):
 
         self.opti0.subject_to(self.x0[0,0] == self.x_s0[0])
         self.opti0.subject_to(self.x0[1,0] == self.x_s0[1])
-        self.opti0.subject_to(self.opti0.bounded(0, self.x0[2,0], 2*np.pi))
+        # self.opti0.subject_to(self.opti0.bounded(-2*np.pi, self.x0[2,0], 2*np.pi))
+        self.opti0.subject_to(self.x0[2,0] == self.x_s0[2])
         self.opti0.subject_to(self.x0[3,0] == self.x_s0[3])
 
         stage_cost = 0

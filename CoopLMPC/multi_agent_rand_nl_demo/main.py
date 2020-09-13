@@ -45,8 +45,10 @@ def solve_init_traj(ftocp, x_0, model_agent, agt_idx, agt_trajs, visualizer=None
 	waypts = ftocp.get_x_refs()
 	waypt_idx = ftocp.get_reference_idx()
 
-	ftocp.build_opti_solver(agt_idx)
-	ftocp.build_opti0_solver(agt_idx)
+	# ftocp.build_opti_solver(agt_idx)
+	# ftocp.build_opti0_solver(agt_idx)
+	ftocp.build_opti_solver(0)
+	ftocp.build_opti0_solver(0)
 
 	t = 0
 	counter = 0
@@ -226,7 +228,7 @@ def main():
 
 	# Initialize dynamics and control agents (allows for dynamics to be simulated with higher resolution than control rate)
 	model_agents = [DT_Kin_Bike_Agent(l_r, l_f, w, model_dt, col_buf=col_buf[i], v_lim=[-2.0, 2.0]) for i in range(n_a)]
-	lmpc_control_agents = [DT_Kin_Bike_Agent(l_r, l_f, w, control_dt, col_buf=col_buf[i], v_lim=[-10.0, 10.0]) for i in range(n_a)]
+	lmpc_control_agents = [DT_Kin_Bike_Agent(l_r, l_f, w, control_dt, col_buf=col_buf[i], v_lim=[-0.05, 10.0]) for i in range(n_a)]
 
 	if args.from_checkpoint is None:
 		if not args.init_traj:
@@ -239,27 +241,49 @@ def main():
 			# Goal conditions (these will be updated once the initial trajectories are found)
 			# x_f = [np.nan*np.ones((n_x, 1)) for _ in range(n_a)]
 
-			x_0 = [np.array([1,3,-np.pi/4,0]),
-				np.array([-2,1,-np.pi/2,0]),
-				np.array([5,8,-3*np.pi/4,0]),
-				np.array([-4,-9,np.pi,0]),
-				np.array([-8,-8,-np.pi/4,0]),
-				np.array([8,3,-3*np.pi/4,0]),
-				np.array([2,-7,0,0]),
-				np.array([-7,0,-3*np.pi/4,0]),
-				np.array([-8,8,np.pi/4,0]),
-				np.array([-7,4,3*np.pi/4,0])]
+			# x_0 = [np.array([1,3,-np.pi/4,0]),
+			# 	np.array([-2,1,-np.pi/2,0]),
+			# 	np.array([5,8,-3*np.pi/4,0]),
+			# 	np.array([-4,-9,np.pi,0]),
+			# 	np.array([-8,-8,-np.pi/4,0]),
+			# 	np.array([8,3,-3*np.pi/4,0]),
+			# 	np.array([2,-7,0,0]),
+			# 	np.array([-7,0,-3*np.pi/4,0]),
+			# 	np.array([-8,8,np.pi/4,0]),
+			# 	np.array([-7,4,3*np.pi/4,0])]
+			#
+			# x_f = [np.array([-9,9,np.pi/2,0]),
+			# 	np.array([8,-8,-np.pi/4,0]),
+			# 	np.array([-5,3,-3*np.pi/4,0]),
+			# 	np.array([7,-2,np.pi,0]),
+			# 	np.array([-4,8,np.pi/2,0]),
+			# 	np.array([-3,-3,-3*np.pi/4,0]),
+			# 	np.array([9,9,np.pi,0]),
+			# 	np.array([0,-9,-np.pi/2,0]),
+			# 	np.array([3,7,0,0]),
+			# 	np.array([4,-1,-np.pi/4,0])]
 
-			x_f = [np.array([-9,9,np.pi/2,0]),
-				np.array([8,-8,-np.pi/4,0]),
-				np.array([-5,3,-3*np.pi/4,0]),
-				np.array([7,-2,np.pi,0]),
-				np.array([-4,8,np.pi/2,0]),
-				np.array([-3,-3,-3*np.pi/4,0]),
-				np.array([9,9,np.pi,0]),
-				np.array([0,-9,-np.pi/2,0]),
-				np.array([3,7,0,0]),
-				np.array([4,-1,-np.pi/4,0])]
+			x_0 = [np.array([8,3,np.pi,0]),
+				np.array([-9,5,-np.pi/6,0]),
+				np.array([-5,-8,np.pi/3,0]),
+				np.array([4,9,-2*np.pi/3,0]),
+				np.array([8,-8,3*np.pi/4,0]),
+				np.array([-8,-2,np.pi/5,0]),
+				np.array([2,-7,3*np.pi/4,0]),
+				np.array([-7,8,-np.pi/4,0]),
+				np.array([9,-4,3*np.pi/4,0]),
+				np.array([9,7,-2*np.pi/3,0])]
+
+			x_f = [np.array([-8,1,np.pi,0]),
+				np.array([9,1,-np.pi/6,0]),
+				np.array([0,9,np.pi/2,0]),
+				np.array([-6,-8,-3*np.pi/4,0]),
+				np.array([-2,8,4*np.pi/6,0]),
+				np.array([6,8,np.pi/4,0]),
+				np.array([-8,5,3*np.pi/4,0]),
+				np.array([7,-7,-np.pi/4,0]),
+				np.array([-7,7,3*np.pi/4,0]),
+				np.array([-2,-9,-4*np.pi/6,0])]
 
 			# Initialize lists to store feasible trajectories for agents
 			xcl_feas = []
@@ -267,7 +291,7 @@ def main():
 
 			# Initialize FTOCP objects
 			# Initial trajectory MPC parameters for each agent
-			Q = np.diag([20.0, 20.0, 1.0, 25.0])
+			Q = np.diag([20.0, 20.0, 10.0, 25.0])
 			# R = np.diag([10.0, 30.0])
 			R = np.diag([10.0, 10.0])
 			# Rd = np.diag([10.0, 30.0])
@@ -359,6 +383,13 @@ def main():
 		# (no collisions)
 		xcl_lens = [xcl_feas[i].shape[1] for i in range(n_a)]
 
+		before_len = 0
+		for i in range(1,n_a):
+			before_len += (xcl_lens[i-1]-80)
+
+			xcl_feas[i] = np.hstack((np.tile(x_0[i].reshape((-1,1)), before_len), xcl_feas[i]))
+			ucl_feas[i] = np.hstack((np.zeros((n_u, before_len)), ucl_feas[i]))
+
 		if plot_init:
 			plot_bike_agent_trajs(xcl_feas, ucl_feas, model_agents, model_dt, trail=True, plot_lims=plot_lims, it=0)
 
@@ -381,6 +412,7 @@ def main():
 
 		# Set goal state to be last state of initial trajectories
 		x_f = [xcls[0][i][:,-1] for i in range(n_a)]
+		x_0 = [xcls[0][i][:,0] for i in range(n_a)]
 	else:
 		# Initialize LMPC objects for each agent
 		N_LMPC = [30 for _ in range(n_a)] # horizon lengths
@@ -394,7 +426,7 @@ def main():
 	ss_n_t = 80
 	ss_n_j = 1
 
-	totalIterations = 10 # Number of iterations to perform
+	totalIterations = 20 # Number of iterations to perform
 	start_time = time.strftime("%Y-%m-%d_%H-%M-%S")
 	exp_dir = '/'.join((out_dir, start_time))
 	os.makedirs(exp_dir)
@@ -415,7 +447,7 @@ def main():
 		it_dir = '/'.join((exp_dir, 'it_%i' % (it+1)))
 		os.makedirs(it_dir)
 
-		plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=True, plot_lims=plot_lims, save_dir=exp_dir, save_video=True, it=it)
+		plot_bike_agent_trajs(xcls[-1], ucls[-1], model_agents, model_dt, trail=False, plot_lims=plot_lims, save_dir=exp_dir, save_video=True, it=it)
 
 		# pdb.set_trace()
 		it_start = time.time()

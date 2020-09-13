@@ -17,10 +17,12 @@ sys.path.append(BASE_DIR)
 DATA_DIR = BASE_DIR + '/out'
 
 def main():
-    exp_dir = '/2020-03-15_16-39-46'
+    # exp_dir = '/2020-09-11_09-12-11' # Last random iterations
+    # exp_dir = '/2020-09-10_14-16-41' # First random iterations
+    exp_dir = '/2020-09-07_09-04-01' # Circle iterations
 
-    it = 20
-    n_a = 3
+    it = 10
+    n_a = 10
     dt = 0.1
     l_f = 0.5
     l_r = 0.5
@@ -36,17 +38,19 @@ def main():
 
     n_cls = len(x_cls)
 
-    agent_colors = np.array([[0, 0.4470, 0.7410], [0.8500, 0.3250, 0.0980], [0.6350, 0.0780, 0.1840]])
+    # agent_colors = np.array([[0, 0.4470, 0.7410], [0.8500, 0.3250, 0.0980], [0.6350, 0.0780, 0.1840]])
+    agent_colors = [matplotlib.cm.get_cmap('jet')(i*(1./(n_a-1))) for i in range(n_a)]
 
-    x_lim = [-6, 6]
-    y_lim = [-6, 6]
+    x_lim = [-10, 10]
+    y_lim = [-10, 10]
     pos_fig_w = 7
     pos_fig_h = 7
 
     dpi = 100
 
-    plot_cls = range(n_cls)
+    # plot_cls = range(n_cls)
     # plot_cls = [0]
+    plot_cls = [n_cls-1]
 
     for i in plot_cls:
         imgs = []
@@ -124,7 +128,8 @@ def main():
                     pos_ax.plot(bound_x, bottom_y, color=agent_colors[j])
                     # pos_ax.fill_between(bound_x, top_y, bottom_y, color=agent_colors[j], alpha=0.5)
 
-                    pos_ax.scatter(x, y, s=3, color=agent_colors[j].reshape((1,-1)), alpha=0.5, label=('Agent %i' % (j+1)))
+                    # pos_ax.scatter(x, y, s=3, color=agent_colors[j].reshape((1,-1)), alpha=0.5, label=('Agent %i' % (j+1)))
+                    pos_ax.scatter(x, y, s=3, color=agent_colors[j], alpha=0.5, label=('Agent %i' % (j+1)))
 
                     # pos_ax.plot(car_x, car_y, color=agent_colors[j])
                     pos_ax.add_patch(car_rec)
