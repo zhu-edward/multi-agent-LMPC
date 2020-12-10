@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 from sklearn import svm
 import pdb, itertools, matplotlib
 
+import warnings
+warnings.filterwarnings("ignore")
+
 def get_safe_set(x_cls, agents, des_num_ts='all', des_num_iters='all'):
 	n_a = len(x_cls[0])
 	n_x = x_cls[0][0].shape[0]

@@ -4,7 +4,7 @@ import copy, pickle, pdb, time, sys, os
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import rc
-rc('text', usetex=True)
+rc('text', usetex=False)
 
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt

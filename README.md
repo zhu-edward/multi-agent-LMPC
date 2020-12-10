@@ -1,17 +1,31 @@
-# LMPC Examples
+# Multi Agent LMPC Examples
 
-This repo collects a few LMPC examples.
+This repository collects the multi-agent LMPC examples shown in the folloing publications
+
+- Zhu, E., St&uuml;rz, Y., Rosolia, R., Borrelli, F., "Trajectory Optimization for Nonlinear Multi-Agent Systems using Decentralized Learning Model Predictive Control", Presented at Conference on Decision and Control 2020. [[arXiv](https://arxiv.org/abs/2004.01298)]
+- St&uuml;rz, Y., Zhu, E., Rosolia, R., Borrelli, F., "Distributed Learning Model Predictive Control for Linear Systems", Presented at Conference on Decision and Control 2020, Dec 14-18, 2020. [[arXiv](https://arxiv.org/abs/2006.13406)]
+
+The authors are with the Model Predictive Control Lab at UC Berkeley
+- Edward Zhu (edward.zhu@berkeley.edu)
+- Yvonne St&uuml;rz (y.stuerz@berkeley.edu)
+
+## Directory Structre
+
+`decentralized_LMPC` collects examples relating to the first paper above where a decentralized LMPC policy is implemented in multiple multi-agent navigation tasks. In this approach, synthesis of the decoupled MPC policies is done in a centralized manner between iterations of task execution. Online execution of the decoupled policies can be done completely in parallel with no communication between agents
+- `3_agent_nl_demo`: A simple navigation task for 3 car-like agents navigating an intersection
+- `3_agent_nl_centralized_demo`: The above task with centralized policy synthesis and control (for comparison with the decentralized approach)
+- `multi_agent_nl_demo`: A more complex task with 10 agents performing collision free manuevers in a shared space. Agents are initialized in a circle
+- `multi_agent_rand_nl_demo`: A more complex task with 10 agents performing collision free manuevers in a shared space. Agents are initialized in arbitrary positions
+
+`distributed_LMPC` collects examples relating to the second paper where a distributed LMPC policy is implemented using an ADMM based approach
 
 ## Native/VirtualEnv Installation
 
-The code is written in Python 2.7 and the following packages are required
+The code is written in Python 3 and the following packages are required
 
 ```
-apt install coinor-libipopt-dev
-pip install cvxpy
-apt install -y libblas-dev
-pip install ipopt
-pip intall casadi
+sudo apt install coinor-libipopt-dev libblas-dev ffmpeg
+sudo python3 -m pip install cvxpy ipopt casadi scikit-learn
 ```
 
 ## Docker Installation
