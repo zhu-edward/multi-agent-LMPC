@@ -3,7 +3,7 @@
 This repository collects the multi-agent LMPC examples shown in the folloing publications
 
 - Zhu, E., St&uuml;rz, Y., Rosolia, R., Borrelli, F., "Trajectory Optimization for Nonlinear Multi-Agent Systems using Decentralized Learning Model Predictive Control", Presented at Conference on Decision and Control 2020. [[arXiv](https://arxiv.org/abs/2004.01298)]
-- St&uuml;rz, Y., Zhu, E., Rosolia, R., Borrelli, F., "Distributed Learning Model Predictive Control for Linear Systems", Presented at Conference on Decision and Control 2020, Dec 14-18, 2020. [[arXiv](https://arxiv.org/abs/2006.13406)]
+<!-- - St&uuml;rz, Y., Zhu, E., Rosolia, R., Borrelli, F., "Distributed Learning Model Predictive Control for Linear Systems", Presented at Conference on Decision and Control 2020, Dec 14-18, 2020. [[arXiv](https://arxiv.org/abs/2006.13406)] -->
 
 The authors are with the Model Predictive Control Lab at UC Berkeley
 - Edward Zhu (edward.zhu@berkeley.edu)
@@ -17,7 +17,7 @@ The authors are with the Model Predictive Control Lab at UC Berkeley
 - `multi_agent_nl_demo`: A more complex task with 10 agents performing collision free manuevers in a shared space. Agents are initialized in a circle
 - `multi_agent_rand_nl_demo`: A more complex task with 10 agents performing collision free manuevers in a shared space. Agents are initialized in arbitrary positions
 
-`distributed_LMPC` collects examples relating to the second paper where a distributed LMPC policy is implemented using an ADMM based approach
+<!-- `distributed_LMPC` collects examples relating to the second paper where a distributed LMPC policy is implemented using an ADMM based approach -->
 
 ## Native/VirtualEnv Installation
 
